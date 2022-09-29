@@ -3,6 +3,7 @@ library(readxl)
 library(purrr)
 library(tidyverse)
 library(naniar)
+library(stringr)
 
 ## ----- function -----------------
 # function to read multiple sheets as separate df
@@ -21,7 +22,6 @@ path <- "./data/Google_Drive_Data_Sheets/Clean_Annotated_Master_Data_Sheet.xlsx"
 
 # read master sheet 
 data.list <- multiplesheets(path)
-reference.structure = 
 
 # combine useful columns
 n <- length(data.list)
@@ -79,16 +79,24 @@ Forage_lab %>% group_by( Year, Month, Transect) %>% summarize(n = n()) %>% filte
 # 9  2019     3 G            8
 # 10  2020     7 NA          60
 
+Forage_lab$Lab_Frame_Height <- as.integer(str_split(Forage_lab$Forage_Sample_Name, "H", n = 2, simplify = T)[,2])
+
 ### read soil lab results ###
 Soil_lab <- read_excel( "./data/Google_Drive_Data_Sheets/Soil_Lab_Results.xlsx")  %>% 
   separate(Transect_ID, into = c("Transect", "Site"), sep = "(?<=[A-Za-z])(?=[0-9])") %>% 
   select(-Sample_Code) %>%
-  rename(Soil_Sample_Condition = Condition) 
+  rename(Soil_Sample_Condition = Condition) %>% 
+  mutate_all(type.convert)  %>%
+  mutate(Site = as.character(Site))
+
+# find which months lack data 
+Soil_lab %>% filter (is.na(Nitrate_N)) %>% group_by( Year, Month, Transect) %>% summarize(n = n()) 
 
 ### read soil compaction ###
 Soil_Compaction <- read_excel( "./data/Google_Drive_Data_Sheets/Soil_Compaction.xlsx") %>% 
   separate(transect, into = c("Transect", "Site"),  sep = "(?<=[A-Za-z])(?=[0-9])") %>% 
-  mutate( cum_strikes = as.numeric (cum_strikes),
+  mutate( Site = as.character(Site), 
+          cum_strikes = as.numeric (cum_strikes),
           cum_strikes = ifelse(is.na(cum_strikes), 0, cum_strikes), # replace NA with 0 
           depth = case_when( depth == 5 ~ "five",
                              depth == 10 ~ "ten",
@@ -112,14 +120,25 @@ master_data <- data.df %>%
 # order columns 
 master_data <- master_data %>% select (
   Year, Month, Transect, Site, Date, Northing, Easting,  #first site attributes
-  Avg_Height, Stdev_Height, Frame_Height, Forage_Sample_Condition, Forage_Sample_Name, DM, Biomass,
+  Avg_Height, Stdev_Height, Frame_Height, Lab_Frame_Height, Forage_Sample_Condition, Forage_Sample_Name, DM, Biomass,
   E,	Protein,	Fibre,	Fat,	Ash,	Starch,	ADF,	NDF,	Sugar,	NCGD, #second grass quantity and quality
   N_Species, Most_Common_Grass_Spp, N_Different_Colors, Most_Common_Grass_Color, Hue,	Value,	Chroma, # then grass composition 
   N_Gaps, Avg_Gaps, Stdev_Gaps, Total_Gap_Size, # grass structure
   total_strikes, max_strikes,	ave_strikes, # soil structure 
   Soil_Sample_Condition,	Nitrate_N,	Ammonium,	pH,	EC_Salts,	Phosphorus,	Potassium,	Calcium,	Magnesium,	Sodium,	C.E.C, OB,# soil compoition
   Percent_Grazed, Cattle, Sheep_Goats,	Wildebeest,	Zebra,	Thompsons_Gazelle,	Impala,	Topi,	Eland,	Buffalo,	Grants_Gazelle,	Waterbuck,	Dikdik,	Elephant,	Giraffe,	Ostrich  # then animal use
-)
+)  # easting and northing were flipped
+
+## ------ clean coordinates --------------
+master_data <- master_data %>% rename (Northing = Easting, Easting = Northing) #........... more to come
+# case when NA - ((Easting > 720000) & (Easting < 780000) & (Northing > 9820000) & (Northing < 9860000)) 
+
+## ----- calibrate frame height because lab frame height does not always match recorded frame height -----
+master_data %>% mutate(height.diff = Frame_Height - Lab_Frame_Height) %>% 
+  filter(height.diff != 0) %>% group_by(Year, Month) %>% summarise( n = n()) # these are different 
+
+# frame height equals to lab frame height if lab frameheight is recorded. otherwise, trust the grass sheets
+master_data <- master_data %>% mutate(Frame_Height = ifelse(is.na(Lab_Frame_Height), Frame_Height, Lab_Frame_Height))
 
 ## ------ save all data --------------
 write_csv(master_data, "./data/cleaned_master_data.csv")
@@ -128,7 +147,7 @@ write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Ea
                                  E,	Protein,	Fibre,	Fat,	Ash,	Starch,	ADF,	NDF,	Sugar,	NCGD, #second grass quantity and quality
                                  N_Species, Most_Common_Grass_Spp, N_Different_Colors, Most_Common_Grass_Color, Hue,	Value,	Chroma, # then grass composition 
                                  N_Gaps, Avg_Gaps, Stdev_Gaps, Total_Gap_Size# grass structure 
-                                 ),  "./data/cleaned_grass_data.csv")
+                                 ),  "./data/cleaned_grass__data.csv")
 write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Easting,
                                  total_strikes, max_strikes,	ave_strikes, # soil structure 
                                  Soil_Sample_Condition,	Nitrate_N,	Ammonium,	pH,	EC_Salts,	Phosphorus,	Potassium,	Calcium,	Magnesium,	Sodium,	C.E.C, OB# soil compoition
@@ -136,3 +155,4 @@ write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Ea
 write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Easting,
                                  Percent_Grazed, Cattle, Sheep_Goats,	Wildebeest,	Zebra,	Thompsons_Gazelle,	Impala,	Topi,	Eland,	Buffalo,	Grants_Gazelle,	Waterbuck,	Dikdik,	Elephant,	Giraffe,	Ostrich  # then animal use
 ),  "./data/cleaned_animal_data.csv")
+
