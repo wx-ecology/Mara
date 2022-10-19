@@ -64,21 +64,10 @@ Forage_lab <- read_excel( "./data/Google_Drive_Data_Sheets/Forage_Lab_Results.xl
          Forage_Sample_Name = Sample_Name) %>% mutate_all(type.convert) %>%
   mutate(Site = as.character(Site))
 
-# find which months lack data 
-Forage_lab %>% group_by( Year, Month, Transect) %>% summarize(n = n()) %>% filter( n != 12) 
-# Year Month Transect     n
-# <dbl> <dbl> <chr>    <int>
-#   1  2018     7 C           11
-# 2  2018     9 C            9
-# 3  2018     9 D            6
-# 4  2018     9 E            7
-# 5  2018     9 F           11
-# 6  2018    11 C           11
-# 7  2019     1 E           11
-# 8  2019     3 C           11
-# 9  2019     3 G            8
-# 10  2020     7 NA          60
+# # find which months lack data. Info summarized in metadata.
+# Forage_lab %>% group_by( Year, Month, Transect) %>% summarize(n = n()) %>% filter( n != 12) 
 
+#extract lab height
 Forage_lab$Lab_Frame_Height <- as.integer(str_split(Forage_lab$Forage_Sample_Name, "H", n = 2, simplify = T)[,2])
 
 ### read soil lab results ###
@@ -89,8 +78,8 @@ Soil_lab <- read_excel( "./data/Google_Drive_Data_Sheets/Soil_Lab_Results.xlsx")
   mutate_all(type.convert)  %>%
   mutate(Site = as.character(Site))
 
-# find which months lack data 
-Soil_lab %>% filter (is.na(Nitrate_N)) %>% group_by( Year, Month, Transect) %>% summarize(n = n()) 
+# # find which months lack data. Info summarized in metadata.
+# Soil_lab %>% filter (is.na(Nitrate_N)) %>% group_by( Year, Month, Transect) %>% summarize(n = n()) 
 
 ### read soil compaction ###
 Soil_Compaction <- read_excel( "./data/Google_Drive_Data_Sheets/Soil_Compaction.xlsx") %>% 
@@ -129,13 +118,10 @@ master_data <- master_data %>% select (
   Percent_Grazed, Cattle, Sheep_Goats,	Wildebeest,	Zebra,	Thompsons_Gazelle,	Impala,	Topi,	Eland,	Buffalo,	Grants_Gazelle,	Waterbuck,	Dikdik,	Elephant,	Giraffe,	Ostrich  # then animal use
 )  # easting and northing were flipped
 
-## ------ clean coordinates --------------
-master_data <- master_data %>% rename (Northing = Easting, Easting = Northing) #........... more to come
-# case when NA - ((Easting > 720000) & (Easting < 780000) & (Northing > 9820000) & (Northing < 9860000)) 
-
 ## ----- calibrate frame height because lab frame height does not always match recorded frame height -----
-master_data %>% mutate(height.diff = Frame_Height - Lab_Frame_Height) %>% 
-  filter(height.diff != 0) %>% group_by(Year, Month) %>% summarise( n = n()) # these are different 
+## find out which ones have frame height mismatch. summarized in metadata.
+# master_data %>% mutate(height.diff = Frame_Height - Lab_Frame_Height) %>% 
+#   filter(height.diff != 0) %>% group_by(Year, Month, Transect) %>% summarise( n = n()) # these are different 
 
 # frame height equals to lab frame height if lab frameheight is recorded. otherwise, trust the grass sheets
 master_data <- master_data %>% mutate(Frame_Height = ifelse(is.na(Lab_Frame_Height), Frame_Height, Lab_Frame_Height))
