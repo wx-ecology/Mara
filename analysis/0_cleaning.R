@@ -129,11 +129,11 @@ master_data <- master_data %>% mutate(Frame_Height = ifelse(is.na(Lab_Frame_Heig
 ## ------ save all data --------------
 write_csv(master_data, "./data/cleaned_master_data.csv")
 write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Easting,
-                                 Avg_Height, Stdev_Height, Frame_Height, Forage_Sample_Condition, Forage_Sample_Name, DM, Biomass,
+                                 Avg_Height, Stdev_Height, Frame_Height, Forage_Sample_Condition, Forage_Sample_Name, DM, Biomass, Percent_Grazed,
                                  E,	Protein,	Fibre,	Fat,	Ash,	Starch,	ADF,	NDF,	Sugar,	NCGD, #second grass quantity and quality
                                  N_Species, Most_Common_Grass_Spp, N_Different_Colors, Most_Common_Grass_Color, Hue,	Value,	Chroma, # then grass composition 
                                  N_Gaps, Avg_Gaps, Stdev_Gaps, Total_Gap_Size# grass structure 
-                                 ),  "./data/cleaned_grass__data.csv")
+                                 ),  "./data/cleaned_grass_data.csv")
 write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Easting,
                                  total_strikes, max_strikes,	ave_strikes, # soil structure 
                                  Soil_Sample_Condition,	Nitrate_N,	Ammonium,	pH,	EC_Salts,	Phosphorus,	Potassium,	Calcium,	Magnesium,	Sodium,	C.E.C, OB# soil compoition
