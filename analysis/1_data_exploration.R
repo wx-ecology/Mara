@@ -2,6 +2,7 @@
 library(tidyverse)
 library(sf)
 library(hrbrthemes)
+library(lubridate)
 # ----- basic info -------
 master.df <- read_csv( "./data/cleaned_master_data.csv")
 
@@ -63,12 +64,62 @@ master.df %>% ggplot(aes( x = Site, y = Sodium)) + geom_point()
 master.df %>% ggplot(aes( x = Site, y = C.E.C)) + geom_point()
 master.df %>% ggplot(aes( x = Site, y = OB)) + geom_point() # should remove.
 
+############################################
+########## explore animal sheet ############
+############################################
+animal <- read_csv("./data/cleaned_animal_data.csv") %>% 
+  mutate( Date = ymd(Date), 
+          Yr_Mo = format_ISO8601(Date, precision = "ym"),
+          Site = as.factor(Site), 
+          All = Cattle + Sheep_Goats +	Wildebeest +	Zebra +	Thompsons_Gazelle +	Impala +	Topi +	Eland +
+            Buffalo +	Grants_Gazelle +	Waterbuck +	Dikdik + Elephant +	Giraffe +	Ostrich)
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(All))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = Percent_Grazed)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "orange") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
 
-# grass %>% mutate(Month = as.factor(Month)) %>% 
-#   ggplot(aes( x = Month, y = Avg_Height)) + 
-#   geom_boxplot() + 
-#   theme_ipsum()
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Cattle))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Wildebeest))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Zebra))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+############################################
+########## explore grass sheet #############
+############################################
+grass <- read_csv("./data/cleaned_grass_data.csv")
+
+# grass %>% mutate(Month = as.factor(Month)) %>%
+#   ggplot(aes( x = Month, y = Avg_Height)) +
+#   geom_boxplot() +
+#   theme_ipsum() +
+#   facet_wrap("Year")
 # 
 # grass %>% 
 #   mutate(Year = as.factor(Year)) %>% 
@@ -90,7 +141,6 @@ master.df %>% ggplot(aes( x = Site, y = OB)) + geom_point() # should remove.
 #   facet_wrap("Year") +
 #   theme_ipsum()
 
-grass <- read_csv("./data/cleaned_grass_data.csv")
 grass %>% mutate(Month = as.factor(Month)) %>% 
   ggplot(aes( x = Month, y = Frame_Height)) + 
   geom_boxplot() + 
