@@ -3,6 +3,8 @@ library(tidyverse)
 library(sf)
 library(hrbrthemes)
 library(lubridate)
+library(viridis)
+library(cowplot)
 # ----- basic info -------
 master.df <- read_csv( "./data/cleaned_master_data.csv")
 
@@ -74,19 +76,95 @@ animal <- read_csv("./data/cleaned_animal_data.csv") %>%
           All = Cattle + Sheep_Goats +	Wildebeest +	Zebra +	Thompsons_Gazelle +	Impala +	Topi +	Eland +
             Buffalo +	Grants_Gazelle +	Waterbuck +	Dikdik + Elephant +	Giraffe +	Ostrich)
 
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(All))) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+# which animals are the most prevalent? ----- 
+animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Yr_Mo, Species) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ggplot(aes(x = Yr_Mo, y = 1, size = sqrt(Count))) +
+  geom_point(color = "orange", alpha = 0.6) +
+  facet_grid(facets = "Species") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  theme(axis.text.y = element_blank())
 
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = Percent_Grazed)) +
+animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Yr_Mo, Species) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ungroup() %>% 
+  ggplot(aes(x = ym(Yr_Mo), y = sqrt(Count))) +
+  geom_line(alpha = 0.6) +
+  geom_point(color = "orange", alpha = 0.8, size = 2) +
+  facet_grid(facets = "Species") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank())
+
+animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Species) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ggplot(aes(x = as.factor(Species), y = Count)) +  
+  geom_segment( aes(x=Species, xend=Species, y=0, yend=Count), color="grey") +
+  geom_point( color="orange", size=4) +
+  theme_classic(base_size = 16) +
+  coord_flip() +
+  scale_x_discrete(limits=rev) +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)
+  )
+
+# spatial temporal trend of animal occupancy and percentage grazed ----- 
+p1 <- animal  %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>% 
+  group_by(Site, Yr_Mo) %>%
+  summarise(Count = sum(Count, na.rm = T)) %>%   ### <------ sum or mean show very similar pattern
+  ggplot(aes(x = Yr_Mo, y = Site, fill = Count)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red")  +
+  theme_ipsum() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position="bottom") +
+  ggtitle ("total dung count")
+
+p2 <- animal  %>%
+  group_by(Site, Yr_Mo) %>%
+  summarise(Mean_Percent_Grazed = mean(Percent_Grazed, na.rm = T)) %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = Mean_Percent_Grazed)) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "orange") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  theme_ipsum() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        legend.position="bottom") +
+  ggtitle ("avergae percentage grazed")
+
+plot_grid(p1, p2)
+
+# spatial temporal trend of animal occupancy by species ----------
+animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Yr_Mo, Site, Species) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%   ### <------ sum and mean shows very similar patterns
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Count))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red")  +
+  facet_wrap(facets = "Species", nrow = 4) +
+  theme_ipsum() +
+  theme(axis.text.x = element_blank(),
+        legend.position="bottom") 
+
+# spatial temporal trend of animal occupancy by animal groups ----------
 
 
 animal  %>%
@@ -105,6 +183,20 @@ animal  %>%
 
 animal  %>%
   ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Zebra))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Thompsons_Gazelle))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  facet_grid(facets = "Transect") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+animal  %>%
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Topi))) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
   facet_grid(facets = "Transect") +
