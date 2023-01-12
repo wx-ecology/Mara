@@ -5,66 +5,9 @@ library(hrbrthemes)
 library(lubridate)
 library(viridis)
 library(cowplot)
+library(GGally)
 # ----- basic info -------
 master.df <- read_csv( "./data/cleaned_master_data.csv")
-
-############################################
-## check every column by plottng against date
-############################################
-# does biomass change by transects? 
-master.df %>% ggplot(aes(x = Date, y = DM)) + geom_point()  
-master.df %>% ggplot(aes( x = Date, y = Avg_Height)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Stdev_Height)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Frame_Height)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = N_Species)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Most_Common_Grass_Spp)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Most_Common_Grass_Color)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Percent_Grazed)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = N_Different_Colors)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = N_Gaps)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Avg_Gaps)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Stdev_Gaps)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Total_Gap_Size)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Cattle)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Sheep_Goats)) + geom_point()  # almost never. maybe should remove
-master.df %>% ggplot(aes( x = Date, y = Wildebeest)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Zebra)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Thompsons_Gazelle)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Impala)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Topi)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Eland)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Buffalo)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Grants_Gazelle)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Waterbuck)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Dikdik)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Elephant)) + geom_point()
-master.df %>% ggplot(aes( x = Date, y = Giraffe)) + geom_point() # <- alsmost never. maybe should remove
-master.df %>% ggplot(aes( x = Date, y = Ostrich)) + geom_point() # should remove
-master.df %>% ggplot(aes( x = Date, y = Total_N)) + geom_point() 
-master.df %>% filter(Biomass < 10000) %>% ggplot(aes( x = Date, y = Biomass)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = E)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Protein)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Fibre)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Fat)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Starch)) + geom_point() # <- does not seem to be very informative
-master.df %>% ggplot(aes( x = Date, y = ADF)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = NDF)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Sugar)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = NCGD)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = total_strikes)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = max_strikes)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = ave_strikes)) + geom_point() 
-master.df %>% ggplot(aes( x = Date, y = Nitrate_N)) + geom_point()  # seems more variations then Ammonium
-master.df %>% ggplot(aes( x = Date, y = Ammonium)) + geom_point() 
-master.df %>% ggplot(aes( x = Site, y = pH)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = EC_Salts)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = Phosphorus)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = Potassium)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = Calcium)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = Magnesium)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = Sodium)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = C.E.C)) + geom_point()
-master.df %>% ggplot(aes( x = Site, y = OB)) + geom_point() # should remove.
 
 ############################################
 ########## explore animal sheet ############
@@ -77,6 +20,7 @@ animal <- read_csv("./data/cleaned_animal_data.csv") %>%
             Buffalo +	Grants_Gazelle +	Waterbuck +	Dikdik + Elephant +	Giraffe +	Ostrich)
 
 # which animals are the most prevalent? ----- 
+## dung count bubble graph -----
 animal %>% 
   pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
   group_by(Yr_Mo, Species) %>% 
@@ -89,6 +33,7 @@ animal %>%
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   theme(axis.text.y = element_blank())
 
+## dung count trend graph -----
 animal %>% 
   pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
   group_by(Yr_Mo, Species) %>% 
@@ -105,6 +50,7 @@ animal %>%
         axis.title.y = element_blank(),
         axis.title.x = element_blank())
 
+# total dung by species lollipop -------
 animal %>% 
   pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
   group_by(Species) %>% 
@@ -159,49 +105,51 @@ animal %>%
   ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Count))) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red")  +
-  facet_wrap(facets = "Species", nrow = 4) +
+  facet_wrap(facets = "Species", ncol = 3) +
   theme_ipsum() +
   theme(axis.text.x = element_blank(),
         legend.position="bottom") 
 
 # spatial temporal trend of animal occupancy by animal groups ----------
-
-
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Cattle))) +
+animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  mutate(Species_group = case_when(Species == "Elephant" ~ "Mega",
+                                    Species == "Cattle" ~ "Livestock",
+                                    Species %in% c("Dikdik", "Thompsons_Gazelle") ~ "Small", 
+                                    Species %in% c("Buffalo", "Eland", "Grants_Gazelle", "Impala", "Topi", "Waterbuck", "Wildebeest", "Zebra") ~ "Medium"
+                                    )) %>%
+  group_by(Yr_Mo, Site, Species_group) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%   ### <------ sum and mean shows very similar patterns
+  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Count))) +
   geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  scale_fill_gradient(low = "white", high = "red")  +
+  facet_wrap(facets = "Species_group", nrow = 2) +
+  theme_ipsum() +
+  theme(axis.text.x = element_blank(),
+        legend.position="bottom")    ## < --- lost variations among different "medium-sized" animals
 
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Wildebeest))) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Zebra))) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+# simple correlation among animal species ----------
+animal %>% select(Percent_Grazed:Ostrich) %>%
+  select(-Giraffe, -Sheep_Goats, -Ostrich) %>%
+  ggcorr(., method = c("complete.obs", "spearman"))
 
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Thompsons_Gazelle))) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-animal  %>%
-  ggplot(aes(x = Yr_Mo, y = Site, fill = sqrt(Topi))) +
-  geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  facet_grid(facets = "Transect") +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
+# # try out overlap package ---- 
+# wildebeest<- animal %>% select(Transect, Site, Year, Month, Wildebeest) %>%
+#   mutate(Time = Month/12 * 2 * pi) %>% 
+#   filter(Wildebeest != 0,
+#          Year == 2019)
+# w.2019 <- wildebeest[rep(seq_len(dim(wildebeest)[1]), wildebeest$Wildebeest), 6]
+# p.2019 <- densityPlot(w.2019, xscale = 12)
+# 
+# cattle <- animal %>% select(Transect, Site, Year, Month, Cattle) %>%
+#   mutate(Time = Month/12 * 2 * pi) %>% 
+#   filter(Cattle != 0,
+#          Year == 2019)
+# c.2019 <- cattle[rep(seq_len(dim(cattle)[1]), cattle$Cattle), 6]$Time
+# p.2019 <- densityPlot(c.2019, xscale = 12, add = T)   # <--- did not work well because of the disceret nature of our data structure
+  
 ############################################
 ########## explore grass sheet #############
 ############################################
