@@ -142,3 +142,62 @@ write_csv(master_data %>% select(Year, Month, Transect, Site, Date, Northing, Ea
                                  Percent_Grazed, Cattle, Sheep_Goats,	Wildebeest,	Zebra,	Thompsons_Gazelle,	Impala,	Topi,	Eland,	Buffalo,	Grants_Gazelle,	Waterbuck,	Dikdik,	Elephant,	Giraffe,	Ostrich  # then animal use
 ),  "./data/cleaned_animal_data.csv")
 
+
+############################################
+## check every column by plotting against date
+############################################
+# does biomass change by transects? 
+master.df %>% ggplot(aes(x = Date, y = DM)) + geom_point()  
+master.df %>% ggplot(aes( x = Date, y = Avg_Height)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Stdev_Height)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Frame_Height)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = N_Species)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Most_Common_Grass_Spp)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Most_Common_Grass_Color)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Percent_Grazed)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = N_Different_Colors)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = N_Gaps)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Avg_Gaps)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Stdev_Gaps)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Total_Gap_Size)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Cattle)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Sheep_Goats)) + geom_point()  # almost never. maybe should remove
+master.df %>% ggplot(aes( x = Date, y = Wildebeest)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Zebra)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Thompsons_Gazelle)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Impala)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Topi)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Eland)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Buffalo)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Grants_Gazelle)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Waterbuck)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Dikdik)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Elephant)) + geom_point()
+master.df %>% ggplot(aes( x = Date, y = Giraffe)) + geom_point() # <- alsmost never. maybe should remove
+master.df %>% ggplot(aes( x = Date, y = Ostrich)) + geom_point() # should remove
+master.df %>% ggplot(aes( x = Date, y = Total_N)) + geom_point() 
+master.df %>% filter(Biomass < 10000) %>% ggplot(aes( x = Date, y = Biomass)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = E)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Protein)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Fibre)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Fat)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Starch)) + geom_point() # <- does not seem to be very informative
+master.df %>% ggplot(aes( x = Date, y = ADF)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = NDF)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Sugar)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = NCGD)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = total_strikes)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = max_strikes)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = ave_strikes)) + geom_point() 
+master.df %>% ggplot(aes( x = Date, y = Nitrate_N)) + geom_point()  # seems more variations then Ammonium
+master.df %>% ggplot(aes( x = Date, y = Ammonium)) + geom_point() 
+master.df %>% ggplot(aes( x = Site, y = pH)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = EC_Salts)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = Phosphorus)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = Potassium)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = Calcium)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = Magnesium)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = Sodium)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = C.E.C)) + geom_point()
+master.df %>% ggplot(aes( x = Site, y = OB)) + geom_point() # should remove.
+
