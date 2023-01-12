@@ -150,3 +150,7 @@ animal %>% select(Percent_Grazed:Ostrich) %>%
 #          Year == 2019)
 # c.2019 <- cattle[rep(seq_len(dim(cattle)[1]), cattle$Cattle), 6]$Time
 # p.2019 <- densityPlot(c.2019, xscale = 12, add = T)   # <--- did not work well because of the disceret nature of our data structure
+
+
+# Gaussian copula graphical models to quantify conditional species association ----------
+library("ecoCopula")
