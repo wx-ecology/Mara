@@ -5,6 +5,7 @@ library(hrbrthemes)
 library(lubridate)
 library(viridis)
 library(cowplot)
+library(patchwork)
 library(GGally)
 # ----- basic info -------
 master.df <- read_csv( "./data/cleaned_master_data.csv")
@@ -50,6 +51,118 @@ animal %>%
         axis.title.y = element_blank(),
         axis.title.x = element_blank())
 
+## dung count stream chart ----- 
+theme_update(
+  plot.title = element_text(
+    size = 25,
+    face = "bold",
+    hjust = .5,
+    margin = margin(10, 0, 30, 0)
+  ),
+  plot.caption = element_text(
+    size = 9,
+    color = "grey40",
+    hjust = .5,
+    margin = margin(20, 0, 5, 0)
+  ),
+  axis.text.y = element_blank(),
+  axis.title = element_blank(),
+  #plot.background = element_rect(fill = "grey88", color = NA),
+  panel.background = element_rect(fill = NA, color = NA),
+  #panel.grid = element_blank(),
+  panel.spacing.y = unit(0, "lines"),
+  strip.text.y = element_blank(),
+  legend.position = "bottom",
+  legend.text = element_text(size = 9, color = "grey40"),
+  legend.box.margin = margin(t = 30), 
+  legend.background = element_rect(
+    color = "grey40", 
+    #fill = "grey95",
+    size = .3
+  ),
+  legend.key.height = unit(.25, "lines"),
+  legend.key.width = unit(2.5, "lines"),
+  plot.margin = margin(rep(20, 4))
+)
+
+
+animal.stream <- animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Yr_Mo, Species) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ungroup() %>%
+  mutate(
+    Yr_Mo_i = match(Yr_Mo, time)
+  )
+
+g <- animal.stream %>%
+  ggplot(
+    aes(
+      Yr_Mo_i,
+      Count,
+      color = Species,
+      fill = Species,
+    )
+  )  +
+  geom_hline(
+    data = tibble(y = c(2043/2, 3043, 3043*1.5, 6086)),
+    aes(yintercept = y),
+    color = "grey22", 
+    size = .5,
+    linetype = "dotted"
+  ) +
+  geom_stream(
+    geom = "polygon",
+    type = "ridge",
+    bw = 0.55,
+    size = 0,
+    extra_span = .2
+  ) +
+  scale_fill_manual(
+    expand = c(0, 0),
+    values = lighten(paletteer_d("rcartocolor::Prism"), .15, space = "HLS")
+  )  +
+  theme (axis.text.x = element_blank())
+
+# ggsave("./figures/total-count-streamplot1.png", g, 
+#        width = 16, height = 10, device = ragg::agg_png)
+
+animal.stream2 <- animal %>% 
+  pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
+  group_by(Yr_Mo, Species, Site) %>% 
+  summarise(Count = sum(Count, na.rm = T)) %>%
+  filter(!Species %in% c("Giraffe", "Sheep_Goats", "Ostrich")) %>%
+  ungroup() %>%
+  mutate(
+    Yr_Mo_i = match(Yr_Mo, time)
+  )
+
+animal.stream2 %>%
+  ggplot(
+    aes(
+      Yr_Mo_i,
+      Count,
+      color = Species,
+      fill = Species,
+    )
+  ) +
+  geom_stream(
+    geom = "polygon",
+    type = "ridge",
+    bw = 0.55,
+    size = 0,
+    extra_span = .2
+  ) +
+  scale_fill_manual(
+    expand = c(0, 0),
+    values = lighten(paletteer_d("rcartocolor::Prism"), .15, space = "HLS")
+  )  +
+  facet_grid(Site ~ ., 
+             scales = "free_y", 
+             space = "free") + 
+  theme (axis.text.x = element_blank())
+
 # total dung by species lollipop -------
 animal %>% 
   pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%
@@ -94,7 +207,7 @@ p2 <- animal  %>%
         legend.position="bottom") +
   ggtitle ("avergae percentage grazed")
 
-plot_grid(p1, p2)
+p1/p2
 
 # spatial temporal trend of animal occupancy by species ----------
 animal %>% 
