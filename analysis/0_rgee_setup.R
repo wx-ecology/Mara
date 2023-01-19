@@ -54,6 +54,8 @@ ee_check_gcloud()
 # ok scrape all those, instead 
 ee_Authenticate(auth_mode = 'notebook')   #using umich account  <- this step bypass the ee_check_gcloud error.
 ee_Initialize()
+# it worked!! TAT 
+
 # ee.ee_exception.EEException: Not signed up for Earth Engine or project is not registered.
 #https://developers.google.com/earth-engine/guides/service_account
 # created a service account on cloud. now register the service account https://signup.earthengine.google.com/#!/service_accounts
