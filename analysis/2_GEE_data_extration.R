@@ -166,5 +166,11 @@ ee_mara <- ee_mara_VI %>%
 
 # write_csv(ee_mara, "./data/mara_gee_VI_rad.csv")
 
+### ---------------------- simple visualization ------------
+# Simple RGB Vizualization -Landsat
+study_area <- sf_as_ee(study_site_box)
+sampling_site <- sf_as_ee(sample_sites)
+Map$setCenter(35.178043,-1.451947, 10)
+Map$addLayer(sampling_site)
 
 ### ----------------------- END ----------------------------
