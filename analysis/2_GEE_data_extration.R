@@ -161,6 +161,10 @@ ee_mara <- ee_mara_VI %>%
       mutate(date = ymd(paste0(year,"-",month,"-01"))) %>%
       select(-Id, -month, -year)
             ) %>%
-  select(-date)
+  select(-date) %>%
+  rename(Year = year, Month = month)
 
 # write_csv(ee_mara, "./data/mara_gee_VI_rad.csv")
+
+
+### ----------------------- END ----------------------------
