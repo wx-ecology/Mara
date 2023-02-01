@@ -10,7 +10,22 @@ library(GGally)
 ############################################
 ########## explore grass sheet #############
 ############################################
-grass <- read_csv("./data/cleaned_grass_data.csv")
+grass <- read_csv("./data/cleaned__grass__data.csv")
+
+# corregram
+ grass %>%
+  mutate( 
+    Date = ymd(Date), 
+    Yr_Mo = format_ISO8601(Date, precision = "ym"),
+    Site = as.factor(Site),
+    Fat = as.numeric(replace (Fat, Fat == "< 0.10", 0.001)),
+    Starch = as.numeric(replace (Starch, Starch %in% c("< 0.10", "< 0.1" ) , 0.001)),
+    Sugar = as.numeric(replace (Sugar, Sugar == "< 0.50", 0.01)),
+    Avg_Gaps = Avg_Gaps*100 
+  ) %>% 
+  select(Biomass, Percent_Grazed, E, Protein, Fibre, Ash, ADF, NDF, NCGD, Avg_Gaps, Avg_Height) %>%
+   filter(Biomass < 1000) %>%
+  ggpairs()
 
 # grass %>% mutate(Month = as.factor(Month)) %>%
 #   ggplot(aes( x = Month, y = Avg_Height)) +
