@@ -27,7 +27,7 @@ data <- read_csv("./data/cleaned_animal_data.csv") %>%
   mutate( Date = ymd(Date), 
           Yr_Mo = format_ISO8601(Date, precision = "ym")) %>%
   arrange(Year, Month) %>%
-  left_join(gee_data)  %>%  # this step to get NDVI of the same month 
+  left_join(gee_data,  by = c("Year", "Month", "Transect", "Site"))  %>%  # this step to get NDVI of the same month 
   left_join(
     (gee_data %>% mutate(month_id = month_id + 1) %>%  
       select(Transect, Site, NDVI, month_id, pr)), by = c("Transect", "Site", "month_id") # match NDVI from the prior month
