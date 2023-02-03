@@ -1,5 +1,4 @@
 pal12 <- c( "#fdcce5", "#bd7ebe",  "#BF7E7E", "#ffb55a",     "#ffee65",     "#beb9db",   "#b2e061",   "#FEFEE3",    "#E9C09B",   "#7eb0d5",   "#8bd3c7" , "#fd7f6f" )
-
 #         "Buffalo" ,  "Dikdik"  ,"Eland"  ,"Elephant", "Grants_Gazelle",  "Impala",  "Thompsons_Gazelle", "Topi",   "Waterbuck", "Wildebeest", "Zebra"  ,  "Cattle" 
 
 library(tidyverse)
@@ -11,7 +10,7 @@ library(bbplot)
 
 gee_data <- read_csv("./data/mara_gee_VI_rad.csv") %>% select(Year, Month, Transect, Site, pr)
 
-grass <- read_csv("./data/cleaned__grass__data.csv") %>% select(Year, Month, Transect, Site, Avg_Height)
+grass <- read_csv("./data/cleaned_grass_data.csv") %>% select(Year, Month, Transect, Site, Avg_Height)
 
 data <- read_csv("./data/cleaned_animal_data.csv") %>% 
   mutate( Date = ymd(Date), 
@@ -28,7 +27,8 @@ data.waffle <- data %>%
   mutate(
     Species = factor(Species, levels = c( "Buffalo" ,  "Dikdik"  ,"Eland"  ,
                                                "Elephant", "Grants_Gazelle",  "Impala",  "Thompsons_Gazelle", 
-                                               "Topi",   "Waterbuck", "Wildebeest", "Zebra",  "Cattle" )))
+                                               "Topi",   "Waterbuck", "Wildebeest", "Zebra",  "Cattle" )),
+    Yr_Mo = ym (Yr_Mo))
 
 
 ##########################################################################################
@@ -52,15 +52,16 @@ data.waffle <- data %>%
 ##########################################################################################
 ############# stack bar plot + precipitation ######################################################
 ##########################################################################################
-data.pr <- data %>% select(Yr_Mo, pr) %>% distinct()
-coeff = 1/24
+data.pr <- data %>% select(Yr_Mo, pr) %>% distinct() %>% mutate(Yr_Mo = ym (Yr_Mo))
+coeff.pr = 1/24
 p_count_pr <-  ggplot() +
-  geom_bar(data = data.waffle %>% mutate(Yr_Mo = ym (Yr_Mo)), aes(fill = Species, y = Count, x = Yr_Mo),
+  geom_bar(data = data.waffle, aes(fill = Species, y = Count, x = Yr_Mo),
            color = "white", size = 0.1, position = "stack", stat="identity") +
-    geom_line(data = data.pr %>% mutate(Yr_Mo = ym (Yr_Mo)), aes(x = Yr_Mo, y = pr / coeff), color = "#6B8BA4", size = 1.5, alpha = 0.7) +
+    geom_line(data = data.pr, aes(x = Yr_Mo, y = pr / coeff.pr), 
+              color = "#0671c4", size = 1.5, alpha = 0.5) +
     scale_y_continuous(
       name = "Dung count",
-      sec.axis = sec_axis(~.*coeff, name="Precipitation (mm)")
+      sec.axis = sec_axis(~.*coeff.pr, name="Precipitation (mm)")
     ) +
   bbplot::bbc_style()  +
   scale_fill_manual(values = pal12) +
@@ -68,7 +69,7 @@ p_count_pr <-  ggplot() +
          axis.text = element_text(size = 14),
          axis.title.y = element_text(size=16,
                                    color="#222222"),
-         legend.text = element_text(size = 14, color = "grey40"),
+         legend.text = element_text(size = 12, color = "grey40"),
          legend.box.margin = margin(t = 10),
          legend.background = element_rect(
            color = "grey40", 
@@ -77,6 +78,7 @@ p_count_pr <-  ggplot() +
          ),
          strip.text = element_blank()) +
   guides(fill = guide_legend(ncol = 6))
+# p_count_pr
 # ggsave("./figures/count_precipitation.png", p_count_pr, 
 #         width = 20, height = 8, device = ragg::agg_png)
 
@@ -84,5 +86,50 @@ p_count_pr <-  ggplot() +
 ##########################################################################################
 ############# stack bar plot + biomass ######################################################
 ##########################################################################################
-data.grass <- data %>% select(Yr_Mo, Transect, Site, Avg_Height) %>%
-  group_by(Yr_Mo)
+data.grass <- data %>% 
+  select(Yr_Mo, Transect, Site, Avg_Height) %>% 
+  mutate(Yr_Mo = ym (Yr_Mo))
+
+data.grass.summary <- data.grass %>% 
+  group_by(Yr_Mo) %>%
+  summarise(
+    sd = sd(Avg_Height, na.rm = TRUE),
+    Avg_Height = mean(Avg_Height, na.rm = TRUE)
+  ) 
+
+coeff.grass = 70/6000
+
+p_count_biomass <- ggplot() + 
+  geom_bar(data = data.waffle, aes(fill = Species, y = Count, x = Yr_Mo),
+           color = "white", size = 0.1, position = "stack", stat="identity") +
+  geom_jitter(data = data.grass, 
+              aes(x = Yr_Mo, y = Avg_Height/coeff.grass), 
+              position = position_jitter(0.2), color = "#448700", alpha = 0.1) +
+  geom_pointrange(data = data.grass.summary, 
+                  aes(x = Yr_Mo, y = Avg_Height/coeff.grass, ymin = (Avg_Height-sd)/coeff.grass, ymax = (Avg_Height+sd)/coeff.grass),
+                  color = "#448700") +
+  geom_line(data = data.grass.summary, 
+            aes(x = Yr_Mo, y = Avg_Height/coeff.grass, group = 1), size = 1.5, alpha = 0.4, color = "#448700") +
+  scale_y_continuous(
+    name = "Dung count",
+    sec.axis = sec_axis(~.*coeff.grass, name="Biomass")
+  )  +
+  bbplot::bbc_style()  +
+  scale_fill_manual(values = pal12) +
+  theme (axis.text.x = element_blank(),
+         axis.text = element_text(size = 14),
+         axis.title.y = element_text(size=16,
+                                     color="#222222"),
+         legend.text = element_text(size = 12, color = "grey40"),
+         legend.box.margin = margin(t = 10),
+         legend.background = element_rect(
+           color = "grey40", 
+           fill = "grey95",
+           size = .3
+         ),
+         strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 6))
+p_count_biomass
+ ggsave("./figures/count_biomass.png", p_count_biomass, 
+         width = 20, height = 8, device = ragg::agg_png)
+ 
