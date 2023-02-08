@@ -26,8 +26,8 @@ data.waffle <- data %>%
   summarise(Count = sum(Count, na.rm = T)) %>%
   mutate(
     Species = factor(Species, levels = c( "Buffalo" ,  "Dikdik"  ,"Eland"  ,
-                                               "Elephant", "Grants_Gazelle",  "Impala",  "Thompsons_Gazelle", 
-                                               "Topi",   "Waterbuck", "Wildebeest", "Zebra",  "Cattle" )),
+                                          "Elephant", "Grants_Gazelle",  "Impala",  "Thompsons_Gazelle", 
+                                          "Topi",   "Waterbuck", "Wildebeest", "Zebra",  "Cattle" )),
     Yr_Mo = ym (Yr_Mo))
 
 
