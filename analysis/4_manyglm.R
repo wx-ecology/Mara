@@ -79,7 +79,7 @@ ENV <- data %>%
          sin_month = sin(2*pi*Month/12),
          cos_month = cos(2*pi*Month/12)) %>%  # including sin and cos month transformation resolves the circular nature of month
   dplyr::select(-Month) # use as time stamp
-# ggpairs(ENV[,2:8])   # Collinearity does not violate any assumptions of GLMs (unless there is perfect collinearity).
+#ggpairs(ENV[,2:8])   # Collinearity does not violate any assumptions of GLMs (unless there is perfect collinearity).
 
 #### organize counts ####
 COUNT <- data %>% 
@@ -103,17 +103,28 @@ COUNT <- data %>%
 mara.m <- manyglm(COUNT ~ Transect + Site + Pgrazed_lag1 + 
                     Precip + Protein_lag1 + Height_lag1 + 
                     sin_month + cos_month, data = ENV, family="negative.binomial")
+# equivalent to mara.m <- manyglm(COUNT ~., data = ENV, family="negative.binomial"); but the formula needs to be spell out for correctly run prediction
 
 mara.m2 <- manyglm(COUNT ~ Site + Pgrazed_lag1 + 
                      Precip + Protein_lag1 + Height_lag1 + 
                      sin_month + cos_month, data = ENV, family="negative.binomial")
-# equivalent to mara.m <- manyglm(COUNT ~., data = ENV, family="negative.binomial"); but the formula needs to be spell out for correctly run prediction
 
 # test <- anova(mara.m, mara.m2)
-# AIC(mara.m, mara.m2)  ## adding transect does improve the fit.
+# writeRDS(test, "./results/manyglm_allspp_model_compare.RDS")
+test <- readRDS("./results/manyglm_allspp_model_compare.RDS")
+test  ## mara.m is a better fit. adding transect does improve the fit.
 
-plot(mara.m) 
+mara.m3 <- manyglm(COUNT ~ Transect + Site +  
+                    Precip + Protein_lag1 + Height_lag1 + 
+                    sin_month + cos_month, data = ENV, family="negative.binomial")
+
+# test2 <- anova(mara.m, mara.m3)
+# writeRDS(test2, "./results/manyglm_allspp_model_compare2.RDS")
+test2 <- readRDS("./results/manyglm_allspp_model_compare2.RDS")
+test2 ## still shows mara.m is a better fit.
+
 # plot of residuals show that the model assumption is met and the model is a good fit.
+plot(mara.m) 
 
 # then use resampling to test for significant community level or species level responses to our predictors.
 # cor.type I should suffice, according to the package recommendation.
@@ -163,9 +174,17 @@ remove(anova.adj.I, anova.adj.R)
 ## coefficient interval plots 
 coefplot.manyglm(mara.m, which.Xcoef=6:10)
 ### <<--- figure out what is the difference between this and the anova results
+# this coefficient result is not after controllong for species interaction. Just for exploring.
+
+# significance table from anova #########
+# this is derived after resampling. 
+uni.p.df <- data.frame(anova.adj.S$uni.p) %>%
+  mutate(covariate = row.names(.)) %>%
+  filter(covariate != "(Intercept)") %>%
+  pivot_longer(1:12, names_to = "species", values_to = "p")
 
 #########################################################################################
-#### ------------------------ prediction and plot prediction  -------------------- -#####
+#### ----------------------------- prediction and plot   ------------------------- -#####
 #########################################################################################
 # define function, return a prediction table varying with a target variable 
 get_prediction <- function(model, new_data, target_variable) {
@@ -188,11 +207,10 @@ get_prediction <- function(model, new_data, target_variable) {
   return(fit)
 }
 
-# significance table from anova #########
-uni.p.df <- data.frame(anova.adj.S$uni.p) %>%
-  mutate(covariate = row.names(.)) %>%
-  filter(covariate != "(Intercept)") %>%
-  pivot_longer(1:12, names_to = "species", values_to = "p")
+############--- animal use as a function of distance to boundary---######################
+
+################# a 2-panel figure showing prediction with varing distance in #################################
+
 
 #########################################################################################
 ##########################--- DRY MONTH PREDICTION ---###################################
