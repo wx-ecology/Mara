@@ -65,6 +65,11 @@ protein <- read_csv("./data/cleaned_grass_data.csv") %>%  arrange(Year, Month) %
   # match the animal abundance with quality measure of the month prior
   dplyr::select(Transect, Site, month_id, Protein, Avg_Height, Percent_Grazed)
 
+sample_sites <- read_csv("./data/Sampling_site.csv") %>%  # for getting coordinates
+  filter(Location == "Start") %>%
+  dplyr::select(-Location) %>%
+  mutate(Name = paste0(Transect,Site))
+
 data <- read_csv("./data/cleaned_animal_data.csv") %>% 
   mutate( Date = ymd(Date), 
           Yr_Mo = format_ISO8601(Date, precision = "ym")) %>%
@@ -77,6 +82,7 @@ data <- read_csv("./data/cleaned_animal_data.csv") %>%
   left_join(
     protein, by = c("Transect", "Site", "month_id")
   ) %>%
+  left_join(., sample_sites, by = c("Transect", "Site")) %>%
   rename (NDVI = NDVI.x, 
           NDVI_lag1 = NDVI.y,
           Precip = pr.x,
@@ -152,6 +158,19 @@ test2 ## still shows mara.m is a better fit.
 
 # plot of residuals show that the model assumption is met and the model is a good fit.
 plot(mara.m) 
+
+# visually examine spatial autocorrelation in residuals. 
+# examine whether residuals are spatially autocorrelated 
+df.cor <- data.frame(mara.m$residuals, x = data$X, y = data$Y) %>%
+  pivot_longer(1:12, names_to = "species", values_to = "residual") %>%
+  mutate(color = case_when(residual >=0 ~ "red", TRUE ~ "blue"))
+
+df.cor %>% 
+#  filter(species == "Buffalo") %>%
+  ggplot(aes(x = x, y = y, size = residual, color = color)) +
+  geom_point(alpha = 0.3) +
+  facet_wrap("species") +
+  theme_minimal()
 
 ##################### ------------------- hypothesis testing --------------- ###############
 # use resampling to test for significant community level or species level responses to our predictors.
