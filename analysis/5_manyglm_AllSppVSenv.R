@@ -10,6 +10,8 @@ library(tidygraph)
 library(ggraph)
 library(gridExtra)
 library(mvabund)
+library(sf)
+library(gstat)
 
 ################### define function ##########################
 # define standardization (and centering) function 
@@ -65,10 +67,8 @@ protein <- read_csv("./data/cleaned_grass_data.csv") %>%  arrange(Year, Month) %
   # match the animal abundance with quality measure of the month prior
   dplyr::select(Transect, Site, month_id, Protein, Avg_Height, Percent_Grazed)
 
-sample_sites <- read_csv("./data/Sampling_site.csv") %>%  # for getting coordinates
-  filter(Location == "Start") %>%
-  dplyr::select(-Location) %>%
-  mutate(Name = paste0(Transect,Site))
+sample_sites <- read_csv("./data/Sampling_site.csv")  # for getting coordinates
+
 
 data <- read_csv("./data/cleaned_animal_data.csv") %>% 
   mutate( Date = ymd(Date), 
@@ -101,7 +101,7 @@ ENV <- data %>%
   filter(Yr_Mo != "2018-05",
          !is.na(Protein_lag1),
          !is.na(Height_lag1)) %>%   # the first month does not have previous month measurement
-  dplyr::select(Transect, Site, Pgrazed_lag1, Precip, 
+  dplyr::select(lon, lat, Site, Pgrazed_lag1, Precip, 
                 Protein_lag1, Height_lag1, Month) %>%
   mutate(Site = as.numeric(Site),  # distance to boundary 
          ## -- covariates in similar magnitude, no nend to scale (and also easier for interpretation)
@@ -133,12 +133,13 @@ meanvar.plot(COUNT) # we see that the species with high means (on the x axis) al
 #########################################################################################
 # manyglm first fit a single generalized linear model (GLM) to each response variable with a common set of predictor variables.
 
-mara.m <- manyglm(COUNT ~ Transect + Site + Pgrazed_lag1 + 
+mara.m <- manyglm(COUNT ~ lon*lat + Site + Pgrazed_lag1 + 
                     Precip + Protein_lag1 + Height_lag1 + 
                     sin_month + cos_month, data = ENV, family="negative.binomial")
+
 # equivalent to mara.m <- manyglm(COUNT ~., data = ENV, family="negative.binomial"); but the formula needs to be spell out for correctly run prediction
 
-mara.m2 <- manyglm(COUNT ~ Site + Pgrazed_lag1 + 
+mara.m2 <- manyglm(COUNT ~ lon*lat + Pgrazed_lag1 + 
                      Precip + Protein_lag1 + Height_lag1 + 
                      sin_month + cos_month, data = ENV, family="negative.binomial")
 
@@ -147,30 +148,25 @@ mara.m2 <- manyglm(COUNT ~ Site + Pgrazed_lag1 +
 test <- readRDS("./results/manyglm_allspp_model_compare.RDS")
 test  ## mara.m is a better fit. adding transect does improve the fit.
 
-mara.m3 <- manyglm(COUNT ~ Transect + Site +  
+mara.m3 <- manyglm(COUNT ~ lon*lat + Site +  
                     Precip + Protein_lag1 + Height_lag1 + 
                     sin_month + cos_month, data = ENV, family="negative.binomial")
 
 # test2 <- anova(mara.m, mara.m3)
 # writeRDS(test2, "./results/manyglm_allspp_model_compare2.RDS")
-test2 <- readRDS("./results/manyglm_allspp_model_compare2.RDS")
-test2 ## still shows mara.m is a better fit.
+# test2 <- readRDS("./results/manyglm_allspp_model_compare2.RDS")
+# test2 ## still shows mara.m is a better fit.
 
+#################### ----------  model diagnostics ----------- #########################
 # plot of residuals show that the model assumption is met and the model is a good fit.
-plot(mara.m) 
+plot(mara.m)  
 
-# visually examine spatial autocorrelation in residuals. 
-# examine whether residuals are spatially autocorrelated 
-df.cor <- data.frame(mara.m$residuals, x = data$X, y = data$Y) %>%
-  pivot_longer(1:12, names_to = "species", values_to = "residual") %>%
-  mutate(color = case_when(residual >=0 ~ "red", TRUE ~ "blue"))
+# # plot semi-variogram() to examine spatial-autocorrelation in residuals 
+# df.cor <- data.frame(mara.m$residuals, x = data$X, y = data$Y) 
+# v = variogram(Cattle~1, data = df.cor %>% dplyr::select(Cattle, x, y), locations = ~ x + y)
+# m = fit.variogram(v, fit.method = 1, vgm("Exp"))
+# plot(v, model = m)
 
-df.cor %>% 
-#  filter(species == "Buffalo") %>%
-  ggplot(aes(x = x, y = y, size = residual, color = color)) +
-  geom_point(alpha = 0.3) +
-  facet_wrap("species") +
-  theme_minimal()
 
 ##################### ------------------- hypothesis testing --------------- ###############
 # use resampling to test for significant community level or species level responses to our predictors.
@@ -183,25 +179,25 @@ df.cor %>%
 # #           # The “adjusted” part of the argument refers to the resampling method used to compute the p values, taking into account the correlation between the response variables.
 # #           # the default bootstrappingmethod is "PIT-trap", bootstraps probability integral transform residuals, which we have found to give the most reliable Type I error rates.
 # #           # Time elapsed: 0 hr 31 min 55 sec
-#  saveRDS(anova.adj.I, file = "./results/manyglm_allspp_anova_I.rds")
+#  saveRDS(anova.adj.I, file = "./results/manyglm_allspp_anova_latlon_I.rds")
 
 # # The cor.type="shrink" option applies ridge regularisation (Warton 2008), shrinking the sample
 # # correlation matrix towards the identity, which improves its stability when p is not small compared
 # # to N. This provides a compromise between "R" and "I", allowing us to account for correlation
 # # between variables, while using a numerically stable test statistic that has good properties.
 # anova.adj.S <- anova(mara.m, p.uni = "adjusted", show.time = "all", rep.seed = T, cor.type = "shrink")
-# saveRDS(anova.adj.S, file = "./results/manyglm_allspp_anova_S.rds")
+# saveRDS(anova.adj.S, file = "./results/manyglm_allspp_anova_latlon_S.rds")
 
 # # The cor.type="R" option uses the unstructured correlation
 # # matrix (only possible when N>p), such that the standard classical multivariate test statistics are
 # # obtained. Note however that such statistics are typically numerically unstable and have low power
 # # when p is not small compared to N.
 # anova.adj.R <- anova(mara.m, p.uni = "adjusted", show.time = "all", rep.seed = T, cor.type = "R")
-# saveRDS(anova.adj.R, file = "./results/manyglm_allspp_anova_R.rds")
+# saveRDS(anova.adj.R, file = "./results/manyglm_allspp_anova_latlon_R.rds")
 
-anova.adj.I <- readRDS("./results/manyglm_allspp_anova_I.rds")
-anova.adj.S <- readRDS("./results/manyglm_allspp_anova_S.rds")
-anova.adj.R <- readRDS("./results/manyglm_allspp_anova_R.rds")
+anova.adj.I <- readRDS("./results/manyglm_allspp_anova_latlon_I.rds")
+anova.adj.S <- readRDS("./results/manyglm_allspp_anova_latlon_S.rds")
+anova.adj.R <- readRDS("./results/manyglm_allspp_anova_latlon_R.rds")
 
 # multivariate (community composition) results
 data.frame(covariate = row.names(anova.adj.I$table),
