@@ -17,8 +17,16 @@ df %>%
   ggpairs()
 
 df %>%
-  ggplot(aes( x = NDVI, y = pr)) +
-  geom_point()
+  ggplot(aes( x = NDVI, y = Percent_Grazed)) +
+  geom_point()+
+  geom_smooth()+
+  theme_minimal()
+
+df %>%
+  ggplot(aes( x = NDVI, y = Avg_Height)) +
+  geom_point()+
+  geom_smooth()+
+  theme_minimal()
 
 p1 <- df %>% 
   group_by(date, Site) %>%
@@ -46,3 +54,4 @@ p4 <-  df %>%
   ggplot() +
   geom_line(aes(x = date, y = Biomass, group = Site, color = Site)) +
   theme_ipsum()
+
