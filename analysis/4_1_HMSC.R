@@ -12,7 +12,7 @@ data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled.csv") %>
   mutate(Transect = factor(Transect, levels = c("C", "D", "E", "F", "G")),
          Site = as.numeric(Site),  # distance to boundary 
          sin_month = sin(2*pi*Month/12),
-         cos_month = cos(2*pi*Month/12)) %>% 
+         cos_month = cos(2*pi*Month/12)) %>%   # ). To account for the periodic nature of months over time, we included the mean timing of each event as the linear effect of its cosine and sine transformations
   filter(Yr_Mo != "2018-05",
          !is.na(Protein_lag1),
          !is.na(Height_lag1)) %>%  # the first month does not have previous month measurement
@@ -34,17 +34,22 @@ XData <- data %>%
   dplyr::select(Name, Pgrazed_lag1, Precip, 
               Protein_lag1, Height_lag1, Month)   ## <<------------------ two options. including month as random variable or as fixed effect with circular transformation 
 
+## random effect ## 
 # spatial data 
 xy <- data %>%
   dplyr::select(x, y) %>% as.matrix(.)
 rownames(xy) = data$sample.id
 colnames(xy) = c("x-coordinate","y-coordinate") 
 
-# temporal data 
+# study design 
+studyDesign = data.frame(sample = site=as.factor(site),year=as.factor(year),)
+
 month <- data %>%
   dplyr::select(Month) %>% as.matrix(.)
 rownames(month) = data$sample.id
 colnames(month) = "month"  ???
+  
+  
 # trait data 
 ## ..... TrData 
 
@@ -65,6 +70,8 @@ plot <- as.matrix(data.frame(studyDesign$Plot))
 rownames(plot) <- studyDesign$Year
 
 # random effect 
+# To account for the nature of the study design and to evaluate co-variation among xxxx, 
+# we included three random effects for the site, the year and the sampling unit (that is, year–site pairs)
 # include a random effect at the level of sampling unit to estimate species-to-species residual associations
 rL1 = HmscRandomLevel(units = studyDesign$sample)
 rL2 = HmscRandomLevel(sData = xy) # spatial structure
