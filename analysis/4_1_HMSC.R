@@ -72,19 +72,25 @@ ranLevels = list(sample = rL.sample, month = rL.temporal, plot = rL.spatial)
 
 #  ----- model construction and fitting with Bayesian inference -----
 # Fitting the four alternative HMSC models with increasing thinning
-samples = 25
+samples = 1000
 nChains = 4
 ModelDir = "./results/Hmsc_model/"
 for (thin in c(1,10,100,1000)){
   m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
-           #  TrData = TrData,TrFormula = TrFormula,
            distr = "lognormal poisson",
            studyDesign = studyDesign, 
            ranLevels = ranLevels)
+  
   m = sampleMcmc(m, samples = samples, thin=thin,
                  adaptNf=rep(ceiling(0.4*samples*thin),m$nr), 
                  transient = ceiling(0.5*samples*thin),
-                 nChains = nChains)
+                 nChains = nChains, initPar = "fixed effects",
+                 nParallel = nParallel)
+  # MCMC convergence can be difficult to achieve especially in those models that are not based on normal distribution.
+  # For this reason, in the script above we initialize model with
+  # initPar="fixed effects", with which option the MCMC chains are not started from locations randomized from the prior
+  # but from a maximum likelihood solution to the fixed-effects part of the model
+  
   filename = file.path(ModelDir, paste("model_thin_", as.character(thin),
                                        "_samples_", as.character(samples),
                                        "_chains_",as.character(nChains),
@@ -94,19 +100,63 @@ for (thin in c(1,10,100,1000)){
 
 
 # ------ evaluating model convergence -------- #
+load("./results/Hmsc_model/model_thin_1000_samples_25_chains_4.Rdata")
+
 # In a model with random effects, it is important to look at the convergence diagnostics not only for the
 # β parameters, but also for the Ω parameters. The matrix Ω is the matrix of species-to-species residual
 # covariances.
 ## see tutorial P7 https://cran.r-project.org/web/packages/Hmsc/vignettes/vignette_2_multivariate_low.pdf 
 
+# check MCMC convergence diagnostics
+mpost = convertToCodaObject(m)
 
-# ------ predictive power ------
+## trace plots for the beta parameters 
+# starting point is determined by transient, total iteration is 40,000, recorded every m-th (thin = m) step of the interation
+# a good plot should show that different chains look identical and the chains mix very well, and they seem to have reached 
+# a stationary distribution (e.g. the first half of the recorded interations looks statistically identical to the second half of the recorded iterations).
+plot(mpost$Beta)
 
+## alternatively, we evaluate MCMC convergence in a quantitative way in terms of effective sample size and potential scale reduction factors.
+# we want to see the effective sample sizes are very close to the theoretical value of the actual number of
+# samples, which should be samples*nChains. If true, it indicates very litte autocorrelation among consecutive samples.
+# we also want to see the scale reduction factors very close to 1, which indicates the different chains gave consistent results.
+par(mfrow=c(2,2))
+hist(effectiveSize(mpost$Beta), main="ess(beta)", breaks = 20)
+hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks = 20)
+hist(effectiveSize(mpost$Omega[[1]]), main="ess(omega)", breaks = 20)
+hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20)
 
 # ------ explanatory power -----
+#To assess model fit 
+preds = computePredictedValues(m) # get posterior predictive distribution
+evaluateModelFit(hM=m, predY=preds) # explanatory power varies for different species 
 
+# ------ predictive power ------
+# through two-fold cross validation 
+partition = createPartition(m, nfolds = 2)
+preds = computePredictedValues(m, partition = partition, nParallel = nChains)
+evaluateModelFit(hM = m, predY = preds)
 
 # ------ exploring parameter estimates ------- 
+## beta estiamtes
+postBeta = getPostEstimate(m, parName = "Beta")
+plotBeta(m, post = postBeta, param = "Support", supportLevel = 0.95) # red are parameters significantly positive and blue are ones significantly negative. 
 
+## omega estimates (species-to-species associations), estimated through a latent factor approach by introducing a random effect at the level of the sampling unit. 
+OmegaCor = computeAssociations(m) # converts the covariances to the more convenient scale of correlation (ranging from -1 to +1)
+supportLevel = 0.95 #plot only those associations for which the posterior probability for being negative or positive is at least 0.95. 
+toPlot = ((OmegaCor[[1]]$support>supportLevel)
+          + (OmegaCor[[1]]$support<(1-supportLevel))>0)*OmegaCor[[1]]$mean
+corrplot(toPlot, method = "color",
+         col = colorRampPalette(c("red","white","blue"))(200),
+         title = paste("random effect level:", m$rLNames[1]), mar=c(0,0,1,0))
 
-# ----- making predictions ---------
+# ----- making predictions using Gaussian Predictive Process ---------
+# conditional prediction for focal species 
+# If the focal species and the other species show residual associations, knowing the observed data for the other
+# species can help to make improved predictions for the focal species.
+
+# setting the knots
+Knots = constructKnots(sData = xy, knotDist = 250, minKnotDist = 1000)
+plot(xy[,1],xy[,2],pch=18, asp=1)
+points(Knots[,1],Knots[,2],col='red',pch=18)
