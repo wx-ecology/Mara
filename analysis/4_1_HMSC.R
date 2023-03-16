@@ -203,12 +203,30 @@ predY = predict(m, Gradient=Gradient, expected = TRUE)
 plotGradient(m, Gradient, pred=predY, measure="Y", index = 1, showData = TRUE)
 plotGradient(m, Gradient, pred=predY, measure="Y", index = 2, showData = TRUE)
 plotGradient(m, Gradient, pred=predY, measure="Y", index = 3, showData = TRUE)
+# Species richness
+plotGradient(m, Gradient, pred=predY, measure="S", showData = TRUE)
+
+# spatial prediction 
+# Thus, we import a grid of spatial coordinates, habitat types and climatic conditions for 1000 locations. 
+# We then apply the `prepareGradient` function to these data to prepare a spatial gradient for which the predictions are to be made
+# While in the book the predictions are presented for 10000 prediction locations, we recommend running this
+# script for 1000 prediction locations to make the running time faster. To choose which one to do,
+# read either the file "grid_1000.csv" to "grid_10000.csv"
 
 
 
-# conditional prediction for focal species 
-# If the focal species and the other species show residual associations, knowing the observed data for the other
-# species can help to make improved predictions for the focal species.
+# --- continue L82
+
+
+
+
+
+
+
+
+
+
+
 
 # setting the knots
 Knots = constructKnots(sData = xy, knotDist = 250, minKnotDist = 1000)
