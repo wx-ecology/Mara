@@ -70,38 +70,42 @@ ranLevels = list(sample = rL.sample, month = rL.temporal, plot = rL.spatial)
 # trait data 
 # to be comparable with ecoCopula, not including body mass here but should include in the consequence analysis 
 
-#  ----- model construction and fitting with Bayesian inference -----
+#  ----------------------------------- model construction and fitting with Bayesian inference ---------------------------------- #
 # Fitting the four alternative HMSC models with increasing thinning
 samples = 1000
 nChains = 4
-ModelDir = "./results/Hmsc_model/"
-for (thin in c(1,10,100,1000)){
-  m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
-           distr = "lognormal poisson",
-           studyDesign = studyDesign, 
-           ranLevels = ranLevels)
-  
-  m = sampleMcmc(m, samples = samples, thin=thin,
-                 adaptNf=rep(ceiling(0.4*samples*thin),m$nr), 
-                 transient = ceiling(0.5*samples*thin),
-                 nChains = nChains, initPar = "fixed effects",
-                 nParallel = nParallel)
-  # MCMC convergence can be difficult to achieve especially in those models that are not based on normal distribution.
-  # For this reason, in the script above we initialize model with
-  # initPar="fixed effects", with which option the MCMC chains are not started from locations randomized from the prior
-  # but from a maximum likelihood solution to the fixed-effects part of the model
-  
-  filename = file.path(ModelDir, paste("model_thin_", as.character(thin),
-                                       "_samples_", as.character(samples),
-                                       "_chains_",as.character(nChains),
-                                       ".Rdata",sep = ""))
-  save(m,file=filename)
+thin = 1000
+ModelDir = file.path(getwd(), "results/Hmsc_model")
+
+run.model = TRUE 
+if(run.model){
+  for (thin in c(1,10,100,1000)){
+    m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
+             distr = "lognormal poisson",
+             studyDesign = studyDesign, 
+             ranLevels = ranLevels)
+    
+    m = sampleMcmc(m, samples = samples, thin=thin,
+                   adaptNf=rep(ceiling(0.4*samples*thin),m$nr), 
+                   transient = ceiling(0.5*samples*thin),
+                   nChains = nChains, initPar = "fixed effects",
+                   nParallel = nParallel)
+    # MCMC convergence can be difficult to achieve especially in those models that are not based on normal distribution.
+    # For this reason, in the script above we initialize model with
+    # initPar="fixed effects", with which option the MCMC chains are not started from locations randomized from the prior
+    # but from a maximum likelihood solution to the fixed-effects part of the model
+    
+    filename = file.path(ModelDir, paste("model_thin_", as.character(thin),
+                                         "_samples_", as.character(samples),
+                                         "_chains_",as.character(nChains),
+                                         ".Rdata",sep = ""))
+    save(m,file=filename)
+  }
+} else {
+  load(file.path(ModelDir, paste0("model_thin_", thin, "_samples_", samples, "_chains_4.Rdata")))
 }
 
-
-# ------ evaluating model convergence -------- #
-load("./results/Hmsc_model/model_thin_1000_samples_25_chains_4.Rdata")
-
+# ------------------------------------ evaluating model convergence --------------------------------- #
 # In a model with random effects, it is important to look at the convergence diagnostics not only for the
 # β parameters, but also for the Ω parameters. The matrix Ω is the matrix of species-to-species residual
 # covariances.
@@ -126,18 +130,54 @@ hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks
 hist(effectiveSize(mpost$Omega[[1]]), main="ess(omega)", breaks = 20)
 hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20)
 
-# ------ explanatory power -----
+# ------------------------------------ explanatory power -------------------------------------------------- #
 #To assess model fit 
 preds = computePredictedValues(m) # get posterior predictive distribution
 evaluateModelFit(hM=m, predY=preds) # explanatory power varies for different species 
 
 # ------ predictive power ------
 # through two-fold cross validation 
-partition = createPartition(m, nfolds = 2)
-preds = computePredictedValues(m, partition = partition, nParallel = nChains)
-evaluateModelFit(hM = m, predY = preds)
+# takes a lot of time, as the model needs to be re-fitted twice. 
+# Set run.cross.validation = TRUE to perform the cross-validation and to save the results.
+# Set run.cross.validation = FALSE to read in results from cross-validation that you have run previously.
 
-# ------ exploring parameter estimates ------- 
+nParallel = 2
+run.cross.validation = TRUE # start with TRUE when you introduce the script
+filename=file.path(ModelDir, paste0("CV_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains))
+
+if(run.cross.validation){
+  partition = createPartition(m, nfolds = 2)
+  preds = computePredictedValues(m,partition=partition, nParallel = nParallel)
+  MFCV = evaluateModelFit(hM=m, predY=preds)
+  save(partition,MFCV,file=filename)
+} else {
+  load(filename)
+}
+
+if(run.cross.validation){
+  partition = createPartition(m, nfolds = 2, column = "route")
+  preds = computePredictedValues(m,partition=partition, nParallel = nParallel)
+  MFCV = evaluateModelFit(hM=m, predY=preds)
+  save(partition,MFCV,file=filename)
+} else {
+  load(filename)
+}
+
+# While the code above yields the average results over the species, we may also look at the species-specific results.
+# For example, let us plot the explanatory and predictive AUC measures with respect to each other.
+
+plot(MF$AUC,MFCV$AUC)
+abline(0,1)
+# The call to abline(0,1) adds the identity line (y=x) to the plot. For points (=species) below the line,
+# explanatory power is greater than predictive power.
+
+# ---------------------------------------------- exploring parameter estimates ------------------------------------------ # 
+## variance partitioning 
+groupnames = c("Distance-to-border","Forage-quality", "Forage-quantity", "Precipitation", "Season")
+group = c(1,1,3,4,2,3,5) # # Arbitrarily, we include the intercept in the habitat variables
+VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
+plotVariancePartitioning(m,VP, las = 2)
+
 ## beta estiamtes
 postBeta = getPostEstimate(m, parName = "Beta")
 plotBeta(m, post = postBeta, param = "Support", supportLevel = 0.95) # red are parameters significantly positive and blue are ones significantly negative. 
@@ -151,7 +191,21 @@ corrplot(toPlot, method = "color",
          col = colorRampPalette(c("red","white","blue"))(200),
          title = paste("random effect level:", m$rLNames[1]), mar=c(0,0,1,0))
 
-# ----- making predictions using Gaussian Predictive Process ---------
+# ------------------------------ making predictions using Gaussian Predictive Process ---------------------------------- #
+# We start by making gradient plots that visualise how the communities vary among the 
+# environmental variables.
+Gradient = constructGradient(m,focalVariable = "Site")
+predY = predict(m, Gradient=Gradient, expected = TRUE)
+
+# Occurrence probability of Corvus monedula
+# sppecies 1 - cattle, 2 - widebeest, 3 - zebra, 4 - T gazelle, 5 - impala, 6 - topi, 7 - eland, 
+# 8 - buffalo, 9 - G gazelle, 10 - waterbuck, 11 - dikdik, 12 - elephant
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 1, showData = TRUE)
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 2, showData = TRUE)
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 3, showData = TRUE)
+
+
+
 # conditional prediction for focal species 
 # If the focal species and the other species show residual associations, knowing the observed data for the other
 # species can help to make improved predictions for the focal species.
