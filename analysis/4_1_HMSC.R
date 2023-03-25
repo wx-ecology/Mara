@@ -75,18 +75,18 @@ ranLevels = list(sample = rL.sample, month = rL.temporal, plot = rL.spatial)
 samples = 1000
 nChains = 4
 thin = 1000
+nParallel = 2
 ModelDir = file.path(getwd(), "results/Hmsc_model")
 
-run.model = TRUE 
-if(run.model){
-  for (thin in c(1,10,100,1000)){
+run.model = FALSE
+if(run.model){ 
+  for (thin in c(1, 10, 100,1000)){  # thin = 1000 took 107 hours
     m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
              distr = "lognormal poisson",
              studyDesign = studyDesign, 
              ranLevels = ranLevels)
     
     m = sampleMcmc(m, samples = samples, thin=thin,
-                   adaptNf=rep(ceiling(0.4*samples*thin),m$nr), 
                    transient = ceiling(0.5*samples*thin),
                    nChains = nChains, initPar = "fixed effects",
                    nParallel = nParallel)
@@ -102,7 +102,7 @@ if(run.model){
     save(m,file=filename)
   }
 } else {
-  load(file.path(ModelDir, paste0("model_thin_", thin, "_samples_", samples, "_chains_4.Rdata")))
+  load(file.path(ModelDir, paste0("model_thin_", thin, "_samples_", samples, "_chains_", nChains,".Rdata")))
 }
 
 # ------------------------------------ evaluating model convergence --------------------------------- #
@@ -119,6 +119,7 @@ mpost = convertToCodaObject(m)
 # a good plot should show that different chains look identical and the chains mix very well, and they seem to have reached 
 # a stationary distribution (e.g. the first half of the recorded interations looks statistically identical to the second half of the recorded iterations).
 plot(mpost$Beta)
+# plot(mpost$Beta[,1])
 
 ## alternatively, we evaluate MCMC convergence in a quantitative way in terms of effective sample size and potential scale reduction factors.
 # we want to see the effective sample sizes are very close to the theoretical value of the actual number of
@@ -141,8 +142,7 @@ evaluateModelFit(hM=m, predY=preds) # explanatory power varies for different spe
 # Set run.cross.validation = TRUE to perform the cross-validation and to save the results.
 # Set run.cross.validation = FALSE to read in results from cross-validation that you have run previously.
 
-nParallel = 2
-run.cross.validation = TRUE # start with TRUE when you introduce the script
+run.cross.validation = FALSE # start with TRUE when you introduce the script
 filename=file.path(ModelDir, paste0("CV_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains))
 
 if(run.cross.validation){
@@ -173,6 +173,7 @@ abline(0,1)
 
 # ---------------------------------------------- exploring parameter estimates ------------------------------------------ # 
 ## variance partitioning 
+dev.off()
 groupnames = c("Distance-to-border","Forage-quality", "Forage-quantity", "Precipitation", "Season")
 group = c(1,1,3,4,2,3,5) # # Arbitrarily, we include the intercept in the habitat variables
 VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
@@ -187,48 +188,89 @@ OmegaCor = computeAssociations(m) # converts the covariances to the more conveni
 supportLevel = 0.95 #plot only those associations for which the posterior probability for being negative or positive is at least 0.95. 
 toPlot = ((OmegaCor[[1]]$support>supportLevel)
           + (OmegaCor[[1]]$support<(1-supportLevel))>0)*OmegaCor[[1]]$mean
-corrplot(toPlot, method = "color",
-         col = colorRampPalette(c("red","white","blue"))(200),
-         title = paste("random effect level:", m$rLNames[1]), mar=c(0,0,1,0))
 
-# ------------------------------ making predictions using Gaussian Predictive Process ---------------------------------- #
-# We start by making gradient plots that visualise how the communities vary among the 
+saveRDS(toPlot, "./results/Hmsc_network_95.RDS")
+
+corrplot(toPlot, method = "circle", type = "lower", tl.col = "black",
+         col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
+# The red and blue colours indicate those species pairs for which the support for
+# either a negative or positive association is at least 0.95.
+
+# when trying lower supportive level, we see the weak positive correlation between cattle and other species, and weak negative correlation between elephant and other species
+supportLevel = 0.5
+toPlot = ((OmegaCor[[1]]$support>supportLevel)
+          + (OmegaCor[[1]]$support<(1-supportLevel))>0)*OmegaCor[[1]]$mean
+
+saveRDS(toPlot, "./results/Hmsc_network_50.RDS")
+
+corrplot(toPlot, method = "circle", type = "lower",tl.col = "black",
+         col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
+
+# The red and blue colours indicate those species pairs for which the support for
+# either a negative or positive association is at least 0.95.
+# Note that we have ordered the species (with the function corrMatOrder) so that the cluster of
+# co-occurring species is most easily seen. To keep the original species order, write e.g. plotOrder = 1:m$ns
+
+# We next examine at which spatial scale the variation captured by the random effect occurs.
+
+mpost = convertToCodaObject(m) # mpost was calculated above
+summary(mpost$Alpha[[1]], quantiles = c(0.025, 0.5, 0.975))
+
+# There is no support for spatial signal in the residual, as the posterior distribution
+# of the alphas overlap with zero. Thus, the variation is independent among the survey routes.
+# Note that in case of the model without environmental covariates (not shown here but see the book),
+# the variation in the leading factor occurs at the scale of ca. 150 km, reflecting the scale
+# at which the relevant environmental conditions vary.
+
+
+
+# ------------------------------ making predictions  ---------------------------------- #
+# We start by making gradient plots that visualise how the communities vary among the
 # environmental variables.
-Gradient = constructGradient(m,focalVariable = "Site")
+Gradient = constructGradient(m,focalVariable = "Site")  ## <<--- this might be used as "grazing intensity"
 predY = predict(m, Gradient=Gradient, expected = TRUE)
 
 # Occurrence probability of Corvus monedula
-# sppecies 1 - cattle, 2 - widebeest, 3 - zebra, 4 - T gazelle, 5 - impala, 6 - topi, 7 - eland, 
+# sppecies 1 - cattle, 2 - widebeest, 3 - zebra, 4 - T gazelle, 5 - impala, 6 - topi, 7 - eland,
 # 8 - buffalo, 9 - G gazelle, 10 - waterbuck, 11 - dikdik, 12 - elephant
-plotGradient(m, Gradient, pred=predY, measure="Y", index = 1, showData = TRUE)
-plotGradient(m, Gradient, pred=predY, measure="Y", index = 2, showData = TRUE)
-plotGradient(m, Gradient, pred=predY, measure="Y", index = 3, showData = TRUE)
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 1, showData = TRUE) # cattle
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 2, showData = TRUE) # wildebeest
+plotGradient(m, Gradient, pred=predY, measure="Y", index = 3, showData = TRUE) # zebra
 # Species richness
 plotGradient(m, Gradient, pred=predY, measure="S", showData = TRUE)
 
-# spatial prediction 
-# Thus, we import a grid of spatial coordinates, habitat types and climatic conditions for 1000 locations. 
-# We then apply the `prepareGradient` function to these data to prepare a spatial gradient for which the predictions are to be made
-# While in the book the predictions are presented for 10000 prediction locations, we recommend running this
-# script for 1000 prediction locations to make the running time faster. To choose which one to do,
-# read either the file "grid_1000.csv" to "grid_10000.csv"
 
-
-
-# --- continue L82
-
-
-
-
-
-
-
-
-
-
-
-
-# setting the knots
-Knots = constructKnots(sData = xy, knotDist = 250, minKnotDist = 1000)
-plot(xy[,1],xy[,2],pch=18, asp=1)
-points(Knots[,1],Knots[,2],col='red',pch=18)
+# # don't need to make this. see proj node Mar 13 
+# # spatial prediction 
+# # Thus, we import a grid of spatial coordinates, forage conditions, precipitation for 1000 locations. 
+# # ~ Site + Pgrazed_lag1 + Precip + Protein_lag1 + Height_lag1 + sin_month + cos_month
+# # We then apply the `prepareGradient` function to these data to prepare a spatial gradient for which the predictions are to be made
+# 
+# grid = read.csv("./analysis/references/Section_11_1_birds 2/data/grid_1000.csv", stringsAsFactors=TRUE)
+# 
+# # Let's look at what is included in the grid
+# 
+# head(grid)
+# 
+# # We see that there  are the same environmental variables as in the data used to fit the model,
+# # as well as the spatial coordinates. This is what we need to make the predictions.
+# 
+# # The habitat type "Ma" is present in the prediction data but it is not part of training data,
+# # so we can't make predictions for it
+# 
+# grid = droplevels(subset(grid,!(Habitat=="Ma")))
+# 
+# # We next construct the objects xy.grid and XData.grid that have the coordinates and
+# # environmental predictors, named similarly (hab and clim) as for the original data matrix (see m$XData) 
+# 
+# xy.grid = as.matrix(cbind(grid$x,grid$y))
+# XData.grid = data.frame(hab=grid$Habitat, clim=grid$AprMay, stringsAsFactors = TRUE)
+# 
+# # We next use the prepareGradient function to convert the environmental and spatial
+# # predictors into a format that can be used as input for the predict function
+# 
+# Gradient = prepareGradient(m, XDataNew = XData.grid, sDataNew = list(Route=xy.grid))
+# 
+# # We are now ready to compute the posterior predictive distribution (takes a minute to compute it)
+# nParallel=2
+# predY = predict(m, Gradient=Gradient, expected = TRUE, nParallel=nParallel)
