@@ -8,6 +8,7 @@ library(GGally)
 library(tidygraph)
 library(ggraph)
 library(corrplot)
+library(igraph)
 #Copulas are a way to construct a multivariate distribution, 
 # can be used as an alternative to hierarchical models 
 # and generalised estimating equations (GEE; as in mvabund).
@@ -40,14 +41,10 @@ ENV <- data %>%
   filter(Yr_Mo != "2018-05",
          !is.na(Protein_lag1),
          !is.na(Height_lag1)) %>%   # the first month does not have previous month measurement
-  dplyr::select(Transect, Site, Pgrazed_lag1, Precip, 
+  dplyr::select( 
+        Transect, Site, Pgrazed_lag1, Precip, 
         Protein_lag1, Height_lag1, Month) %>%
   mutate(Site = as.numeric(Site),  # distance to boundary 
-           ## -- covariates in similar magnitude, no nend to scale (and also easier for interpretation)
-         #Protein_lag1 = scale_this(Protein_lag1), # forage quality of the previous month 
-         #Height_lag1 = scale_this(Height_lag1), # forage quantity of the previous months
-         #Precip = scale_this(Precip),  # precipitation of the current months
-         #Pgrazed_lag1 = scale_this(Pgrazed_lag1), 
          sin_month = sin(2*pi*Month/12),
          cos_month = cos(2*pi*Month/12)) %>%  # including sin and cos month transformation resolves the circular nature of month
   dplyr::select(-Month) # use as time stamp
@@ -80,9 +77,16 @@ degree(igraph_out)
 #######################################################
 ############--------  visualization  ------- ##########
 #######################################################
-corrplot(mara_gr$best_graph$cov)
-corrplot(mara_gr$best_graph$cov, type= "lower")
+corrplot(mara_gr$best_graph$cov,  
+         method = "circle", type = "lower",tl.col = "black",
+         col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
 
+
+cov_out <- mara_gr$best_graph$cov
+saveRDS(cov_out, "./results/ecoCoupla_cor_network.RDS")
+
+cov_out <- mara_gr$best_graph$part
+saveRDS(cov_out, "./results/ecoCoupla_partcor_network.RDS")
 
 igraph_out <- mara_gr$best_graph$igraph_out
 
