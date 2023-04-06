@@ -1,6 +1,6 @@
 ## this script apply the HMSC framework to 
 ## 1. understand the relative contributions of environmental variables and biotic interactions to species occurrences
-## 2. predict cattle and other species spatial use in wetter and dryer months to be used as input later soil and vegetation condition analyses
+## 2. predict cattle and other species spatial use in wetter and dryer months
 
 library(tidyverse)
 library(Hmsc)
