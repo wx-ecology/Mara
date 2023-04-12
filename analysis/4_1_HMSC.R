@@ -146,6 +146,7 @@ MF = evaluateModelFit(hM=m, predY=preds) # explanatory power varies for differen
 round(mean(MF$SR2),2)
 round(sd(MF$SR2),2)
 # some species are high some are low. The mean = 0.43, sd = 0.25 across all species. 
+# the new transient has the same results.
 
 # ------ predictive power ------
 # through two-fold cross validation 

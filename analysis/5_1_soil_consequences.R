@@ -70,8 +70,9 @@ summary(lm(E ~ total_dung, data = full.dat))  # significant, positive
 # ----- question 1: does the presence of cattle lead to lower soil quality (soil N)? ------ # 
 ## the negative relationship was shown by Sitters 2020; 
 
-# hypotheses 1.1 - domestic cattle negatively influence soil N over long term. we should see poorer soil N near park edge 
-# hypotheses 1.2 - sudden/instantaneous intense cattle use will lead to soil N responses in the following months 
+#######
+# hypotheses 1.1 - sudden/instantaneous intense cattle use will lead to soil N responses in the following months 
+#######
 
 hist(full.dat$total_soil_N)  # should use gaussian with log link, which means the underlying model is ln(Y) ~ A + B + ...
 
@@ -79,19 +80,24 @@ hist(full.dat$total_soil_N)  # should use gaussian with log link, which means th
 
 # model 1, regular glm without coordinates 
 glmGammaLog.1 <- glm(total_soil_N ~ livestock_dung + Precip , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.1)$aic #[1] 18501.8
+summary(glmGammaLog.1)$aic #[1] 18467.89
 
 # model 2, add time 
 glmGammaLog.2 <- glm(total_soil_N ~ livestock_dung + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.2)$aic # [1] 18366.77
+summary(glmGammaLog.2)$aic # [1] 18366.77  # better when months is controlled
 
+# now testing whether adding a quadratic term is better
+glmGammaLog.3 <- glm(total_soil_N ~ livestock_dung + I(livestock_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.3)$aic # [1] 18367.7  # hmm very similar AIC. choose the more parsimonious model
+
+### now testing whether there's spatial autocorrelation 
 #visualize spatial autocorrelation in the resituals 
-nbc <- 20
+nbc <- 20 # so that each step is 1km
 cor_r <- pgirmess::correlog(coords=full.dat[,c("x", "y")],
                             z=glmGammaLog.2$residuals,
                             method="Moran", nbclass=nbc)
 
-cor_r #<<<--- no signigicant spatial autocurrelation
+cor_r #<<<--- no signigicant spatial autocurrelation in the residuals 
 correlograms <- as.data.frame(cor_r)
 correlograms$variable <- "residuals_glm"   
 # Plot correlogram
@@ -104,8 +110,14 @@ p <- ggplot(subset(correlograms, variable=="residuals_glm"), aes(dist.class, coe
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 # ggsave("./figures/supp_fig_glm_correlograms.png", p, 
-#        width = 10, height = 4, device = ragg::agg_png)
+#        width = 10, height = 4, device = ragg::agg_png)   # <- no spatial autocorrelation, good. 
 
+best.model.1.1 <- glmGammaLog.2
+summary(best.model.1.1)  # livestock dung and precipitation negatively influence soil N
+
+######
+# below code is useful if there are spatial autocorrelation in residual variance and needs to be taken care of 
+#####
 # model 3, spatial autocorrelation in residual structure 
 # using glmmfields to incorperate spatial autocorrelation in residual structure   ## <<< --- no need to this now! 
 # another method is spaMM package 
@@ -123,30 +135,74 @@ p <- ggplot(subset(correlograms, variable=="residuals_glm"), aes(dist.class, coe
 #                              seed = 1222 # passed to rstan::sampling()
 # )
 
-summary(glmGammaLog.2 )  # livestock dung NEGATIVE predicted soil N 
+#######
+# hypotheses 1.2 - domestic cattle negatively influence soil N over long term. we should see poorer soil N near park edge 
+#######
 
-# with a quadratic term 
-glmGammaLog.3 <- glm(total_soil_N ~ livestock_dung + I(livestock_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.3)$aic # [1] 18367.7  # hmm very similar AIC.
-
-
-glmGammaLog.1.2 <- glm(total_soil_N ~ Site + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+glmGammaLog.1.2.1 <- glm(total_soil_N ~ Site + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
 summary(glmGammaLog.1.2)$aic
 
 glmGammaLog.1.2.2 <- glm(total_soil_N ~ Site + I(Site^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
 summary(glmGammaLog.1.2.2)$aic 
 
-# ----- question 2: which species influence soil quality? -------- #
-# model selection on soil PC over all species.
+best.model.1.2 <- glmGammaLog.1.2.1 
+summary(best.model.1.2 )  # distance to border does not significantly predict soil N
 
+# ----- question 2: how does total space use intensity influence soil quality? --- #
+# -- hypothesis - the influence is not linear 
 glmGammaLog.2.1 <- glm(total_soil_N ~ total_dung  + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
 summary(glmGammaLog.2.1)$aic
 
 glmGammaLog.2.2 <- glm(total_soil_N ~ total_dung + I(total_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
 summary(glmGammaLog.2.2)$aic  # <- quadratic is better! makes sense
 
- ### <<< ----- to do ------- make model with each species seperate covariables
+best.model.2 <- glmGammaLog.2.2
+summary(best.model.2)
 
+### --- visualize the model prediction ----- ###
+new.dat.dry <- data.frame(total_dung = seq(0,300,1),
+                      Precip = rep(46.67278, 301),
+                      sin_month = rep(sin(2*pi*5/12), 301),
+                      cos_month = rep(cos(2*pi*5/12), 301))
+pred <- predict(best.model.2, new.dat.dry, type = "response", se.fit = TRUE)
+new.dat.dry$total_soil_N <- pred$fit
+new.dat.dry$upr <- pred$fit + 1.96 * pred$se.fit
+new.dat.dry$lwr <- pred$fit - 1.96 * pred$se.fit
+
+new.dat.wet <- data.frame(total_dung = seq(0,300,1),
+                          Precip = rep(103.28157, 301),
+                          sin_month = rep(sin(2*pi*12/12), 301),
+                          cos_month = rep(cos(2*pi*12/12), 301))
+pred <- predict(best.model.2, new.dat.wet, type = "response", se.fit = TRUE)
+new.dat.wet$total_soil_N <- pred$fit
+new.dat.wet$upr <- pred$fit + 1.96 * pred$se.fit
+new.dat.wet$lwr <- pred$fit - 1.96 * pred$se.fit
+
+pred.dat <- rbind(new.dat.wet %>% mutate (season = "wet"), 
+                  new.dat.dry %>% mutate (season = "dry"))
+
+pred.dat %>% ggplot(aes(fill = season)) +
+  geom_ribbon(aes( x = total_dung,  ymin = lwr, ymax = upr, alpha = 0.2)) +
+  geom_line(aes(x = total_dung, y = total_soil_N))  ## << --- will make it look better using ggdist::stat_linearibbon() 
+
+
+# ----- question 3: which species influence soil quality?  -------- #
+# model selection on soil PC over all species.
+glmGammaLog.3 <- glm(total_soil_N ~ Cattle + Wildebeest + Zebra + Thompsons_Gazelle + Impala + 
+                       Topi + Eland + Buffalo + Grants_Gazelle + Waterbuck +
+                       Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+
+summary(glmGammaLog.3)  ## <- the issue of this model is that it does not consider all the interactions among different species. the abundance of dung is not independent. so probably not appropriate
+
+library(broom)
+model.estimate <- tidy(glmGammaLog.3, conf.int = T) %>%
+  filter(!term %in% c("(Intercept)", "Precip", "sin_month", "cos_month"))
+
+ggplot(model.estimate, aes(x = term, y = estimate)) +
+  geom_hline(yintercept = 0, color = "grey") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, size = 1, position = "dodge") +
+  geom_point() +
+  coord_flip()
 
 # ----- caveates ------ #
 ## cattle dung could be an underestiamte of actual use becasuse they can poop most inside of corrals. 
