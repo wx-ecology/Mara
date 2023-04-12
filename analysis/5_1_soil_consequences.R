@@ -46,27 +46,13 @@ full.dat <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled.csv"
   filter(total_soil_N < 1500,
          !is.na(total_dung)) 
 
-###  can # of animal dung predict forage quantity  ---- 
-summary(lm(Total_Gap_Size ~ total_dung, data = full.dat)) # - NAH
-# summary(lm(Total_Gap_Size ~ livestock_dung, data = full.dat))
-# summary(lm(Total_Gap_Size ~ mega_dung, data = full.dat))
-# summary(lm(Total_Gap_Size ~ meso_dung + mega_dung + livestock_dung, data = full.dat))
-
-summary(lm(Biomass ~ total_dung, data = full.dat)) # - nah 
-
-summary(lm(Avg_Height ~ total_dung, data = full.dat)) # - significant, NEGATIVE
-
-summary(lm(NDVI ~ total_dung, data = full.dat))  # -- significant, negative 
-
 summary(lm(total_soil_N ~ total_dung, data = full.dat))  # --- significant, but negative.  shouldn;t it be positive? maybe there is a lag...
 
-###  can # of animal dung predict forage quality  ---- 
-summary(lm(Protein ~ total_dung, data = full.dat))  # -- significant, positive
-summary(lm(Fibre~ total_dung, data = full.dat))  # significant, negative
-summary(lm(E ~ total_dung, data = full.dat))  # significant, positive
-# summary(lm(Protein ~ meso_dung + mega_dung + livestock_dung, data = full.dat))
-
-
+# soil <- data.frame(month_id = full.dat$month_id, total_soil_N_lag1 = full.dat$total_soil_N, 
+#                    Year = full.dat$Year, Month = full.dat$Month, Transect = full.dat$Transect, Site = full.dat$Site) %>% 
+#   mutate(month_id = month_id - 1) 
+# full.dat <- full.dat %>% left_join(., soil, by = c("Transect", "Site", "month_id"))
+# summary(lm(total_soil_N_lag1 ~ total_dung, data = full.dat))   # it is negative even with lag 1, 2, 3
 # ----- question 1: does the presence of cattle lead to lower soil quality (soil N)? ------ # 
 ## the negative relationship was shown by Sitters 2020; 
 
@@ -79,25 +65,32 @@ hist(full.dat$total_soil_N)  # should use gaussian with log link, which means th
 # Collinearity does not violate any assumptions of GLMs (unless there is perfect collinearity). so it is ok to use 
 
 # model 1, regular glm without coordinates 
-glmGammaLog.1 <- glm(total_soil_N ~ livestock_dung + Precip , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.1)$aic #[1] 18467.89
+glmGammaLog.1.1 <- glm(total_soil_N ~ livestock_dung + Precip , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.1.1)$aic #[1] 18467.89
 
 # model 2, add time 
-glmGammaLog.2 <- glm(total_soil_N ~ livestock_dung + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.2)$aic # [1] 18366.77  # better when months is controlled
+glmGammaLog.1.2 <- glm(total_soil_N ~ livestock_dung + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.1.2)$aic # [1] 18366.77  # better when months is controlled
 
 # now testing whether adding a quadratic term is better
-glmGammaLog.3 <- glm(total_soil_N ~ livestock_dung + I(livestock_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.3)$aic # [1] 18367.7  # hmm very similar AIC. choose the more parsimonious model
+glmGammaLog.1.3 <- glm(total_soil_N ~ livestock_dung + I(livestock_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.1.3)$aic # [1]  18367.7
+
+glmGammaLog.1.4 <- glm(total_soil_N ~ total_dung + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.1.4)$aic # [1]  18393.31
+
+glmGammaLog.1.5 <- glm(total_soil_N ~ total_dung  + I(total_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+summary(glmGammaLog.1.5)$aic # [1]  18351.89
+
 
 ### now testing whether there's spatial autocorrelation 
 #visualize spatial autocorrelation in the resituals 
 nbc <- 20 # so that each step is 1km
 cor_r <- pgirmess::correlog(coords=full.dat[,c("x", "y")],
-                            z=glmGammaLog.2$residuals,
+                            z=glmGammaLog.1.2$residuals,
                             method="Moran", nbclass=nbc)
 
-cor_r #<<<--- no signigicant spatial autocurrelation in the residuals 
+#cor_r #<<<--- no signigicant spatial autocurrelation in the residuals 
 correlograms <- as.data.frame(cor_r)
 correlograms$variable <- "residuals_glm"   
 # Plot correlogram
@@ -105,15 +98,17 @@ p <- ggplot(subset(correlograms, variable=="residuals_glm"), aes(dist.class, coe
   geom_hline(yintercept = 0, col="grey") +
   geom_line(col="steelblue") + 
   geom_point(col="steelblue") +
+  ylim(-0.023, 0.007) +
   xlab("distance") + 
   ylab("Moran's coefficient")+
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
-# ggsave("./figures/supp_fig_glm_correlograms.png", p, 
-#        width = 10, height = 4, device = ragg::agg_png)   # <- no spatial autocorrelation, good. 
+# ggsave("./figures/supp_fig_glm_soil_correlograms.png", p,
+#        width = 6, height = 4, device = ragg::agg_png)   # <- no spatial autocorrelation, good.
 
-best.model.1.1 <- glmGammaLog.2
+best.model.1.1 <- glmGammaLog.1.2
 summary(best.model.1.1)  # livestock dung and precipitation negatively influence soil N
+
 
 ######
 # below code is useful if there are spatial autocorrelation in residual variance and needs to be taken care of 
@@ -140,21 +135,22 @@ summary(best.model.1.1)  # livestock dung and precipitation negatively influence
 #######
 
 glmGammaLog.1.2.1 <- glm(total_soil_N ~ Site + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.1.2)$aic
+summary(glmGammaLog.1.2)$aic #18366.77
 
 glmGammaLog.1.2.2 <- glm(total_soil_N ~ Site + I(Site^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.1.2.2)$aic 
+summary(glmGammaLog.1.2.2)$aic  # 18398.13
 
 best.model.1.2 <- glmGammaLog.1.2.1 
 summary(best.model.1.2 )  # distance to border does not significantly predict soil N
 
 # ----- question 2: how does total space use intensity influence soil quality? --- #
 # -- hypothesis - the influence is not linear 
+### ><<<_----- consider moving this part up with the cattle dung models as alternative models 
 glmGammaLog.2.1 <- glm(total_soil_N ~ total_dung  + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.2.1)$aic
+summary(glmGammaLog.2.1)$aic # 18393.31
 
 glmGammaLog.2.2 <- glm(total_soil_N ~ total_dung + I(total_dung^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-summary(glmGammaLog.2.2)$aic  # <- quadratic is better! makes sense
+summary(glmGammaLog.2.2)$aic # 18351.89  # <- quadratic is better! makes sense
 
 best.model.2 <- glmGammaLog.2.2
 summary(best.model.2)
@@ -182,20 +178,19 @@ pred.dat <- rbind(new.dat.wet %>% mutate (season = "wet"),
                   new.dat.dry %>% mutate (season = "dry"))
 
 pred.dat %>% ggplot(aes(fill = season)) +
-  geom_ribbon(aes( x = total_dung,  ymin = lwr, ymax = upr, alpha = 0.2)) +
+  geom_ribbon(aes( x = total_dung,  ymin = lwr, ymax = upr), alpha = 0.2) +
   geom_line(aes(x = total_dung, y = total_soil_N))  ## << --- will make it look better using ggdist::stat_linearibbon() 
 
 
 # ----- question 3: which species influence soil quality?  -------- #
 # model selection on soil PC over all species.
 glmGammaLog.3 <- glm(total_soil_N ~ Cattle + Wildebeest + Zebra + Thompsons_Gazelle + Impala + 
-                       Topi + Eland + Buffalo + Grants_Gazelle + Waterbuck +
+                       Topi + Eland + Buffalo + Grants_Gazelle + Waterbuck + Elephant + 
                        Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
 
 summary(glmGammaLog.3)  ## <- the issue of this model is that it does not consider all the interactions among different species. the abundance of dung is not independent. so probably not appropriate
 
-library(broom)
-model.estimate <- tidy(glmGammaLog.3, conf.int = T) %>%
+model.estimate <- broom::tidy(glmGammaLog.3, conf.int = T) %>%
   filter(!term %in% c("(Intercept)", "Precip", "sin_month", "cos_month"))
 
 ggplot(model.estimate, aes(x = term, y = estimate)) +
