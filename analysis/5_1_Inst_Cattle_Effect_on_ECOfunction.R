@@ -40,17 +40,25 @@ summary(spamm.height)
 # #Then the correlation parameter nu and rho which represent the strength and the speed of decay in the spatial effect, which we can turn into the actual spatial correlation effect 
 # # by plotting the estimated correlation between two locations against their distance
 # plot(as.numeric(dd), as.numeric(mm), xlab = "Distance between pairs of location [in m]")
-
 sim_res <- DHARMa::simulateResiduals(spamm.height, 250)
 plot(sim_res)  ## ahh pretty good
 
-
-
 ## ---- then use NDVI ---- ## 
-m.NDVI.1 <- glm(NDVI ~ Cattle + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
-m.NDVI.2 <- glm(NDVI ~ Cattle + I(Cattle^2) + Precip + sin_month + cos_month , data = full.dat, family = Gamma(link = "log"))
+spamm.NDVI <- fitme(Avg_Height ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = Gamma(log)) # this take a bit of time
+summary(spamm.NDVI)
+
+sim_res <- DHARMa::simulateResiduals(spamm.NDVI, 250)
+plot(sim_res)  ## ahh pretty good
+
+## ---- then protein ---- ## 
+spamm.protein <- fitme(Protein ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = Gamma(log)) # this take a bit of time
+summary(spamm.protein)
+
+sim_res <- DHARMa::simulateResiduals(spamm.protein, 250)
+plot(sim_res)  ## ahh pretty good
 
 
+######### ----------------  to be continued ------------- #############
 # ---- predict cattle effect on Grass height, NDVI, and protein ----- #
 # visualize effect of cattle
 newdat <- expand.grid(x = 743430, y = 9835271,
