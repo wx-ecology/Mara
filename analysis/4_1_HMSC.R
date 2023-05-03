@@ -155,7 +155,7 @@ round(sd(MF$SR2),2)
 # Set run.cross.validation = FALSE to read in results from cross-validation that you have run previously.
 
 run.cross.validation = TRUE # start with TRUE when you introduce the script
-filename=file.path(ModelDir, paste0("CV_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains, "newTransient"))
+filename=file.path(ModelDir, paste0("CV_sample_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains, "newTransient"))
 
 if(run.cross.validation){
   partition = createPartition(m, nfolds = 2, column = "sample")
