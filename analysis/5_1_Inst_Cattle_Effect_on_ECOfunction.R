@@ -82,6 +82,10 @@ cattle_effect <-
              upper = c(confint(spamm.height, "Cattle")$interval[[2]],
                        confint(spamm.protein, "Cattle")$interval[[2]],
                        confint(spamm.soilN, "Cattle")$interval[[2]]
+             ),
+             marginalAIC = c(AIC(spamm.height)[[1]],
+                             AIC(spamm.protein)[[1]],
+                             AIC(spamm.soilN)[[1]]
              )
   )
 ggplot(cattle_effect, aes(response_variable, estimate, color = response_variable)) +

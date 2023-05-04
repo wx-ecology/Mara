@@ -8,7 +8,7 @@ library(spaMM)
 library(gridExtra)
 
 gee_data <- read_csv("./data/mara_gee_VI_rad.csv") %>% 
-  dplyr::select(Transect, Site, Year, Month, NDVI, pr) %>%
+  dplyr::select(Transect, Site, Year, Month, pr) %>%
   rename(Precip = pr)
 
 veg_data <- read_csv("./data/cleaned_grass_data.csv") %>% 
@@ -16,7 +16,7 @@ veg_data <- read_csv("./data/cleaned_grass_data.csv") %>%
 
 soil_data <- read_csv("./data/cleaned_soil_data.csv") %>% 
   select(Transect, Site, Year, Month, Nitrate_N, Ammonium) %>%
-  mutate(soil_N = (Nitrate_N + Ammonium) * 4) %>%
+  mutate(Soil_N = (Nitrate_N + Ammonium) * 4) %>%
   select(-Nitrate_N, -Ammonium)
 
 sample_sites <- read_csv("./data/Sampling_site.csv")
@@ -29,7 +29,7 @@ full.dat <- animal_data %>% left_join(sample_sites) %>% left_join(veg_data) %>% 
          cos_month = cos(2*pi*Month/12)) %>%
   filter(!is.na(Protein),
          !is.na(Avg_Height),
-         !is.na(NDVI))  %>% 
+         Soil_N != 1865.12)  %>% # get rid of this obvious outlier 
   arrange(Year, Month) %>%
   group_by(Transect, Site) 
 
@@ -39,52 +39,56 @@ spamm.height <- fitme(Avg_Height ~ Site + Precip + sin_month + cos_month + Mater
 # model summary
 summary(spamm.height) # rho and nu values under "correlation parameter" the scale parameter and the smoothness parameter of the martern model. lamda is random effect variance parameter
 
-# get confidence interval of Site estimate
-# confint(spamm.height, "Site")
-# lower Site upper Site 
-# 0.01263429 0.04568487    ## positive?
-
 # # visualize spatial autocorrelation
 # dd <- dist(full.dat[,c("x","y")])
-# mm <- MaternCorr(dd, nu = 1.9438, rho = 0.000591)
-# # #Then the correlation parameter nu and rho which represent the strength and the speed of decay in the spatial effect, which we can turn into the actual spatial correlation effect 
+# mm <- MaternCorr(dd, nu = 16.666666667, rho =0.003503247)
+# # #Then the correlation parameter nu and rho which represent the strength and the speed of decay in the spatial effect, which we can turn into the actual spatial correlation effect
 # # # by plotting the estimated correlation between two locations against their distance
 # plot(as.numeric(dd), as.numeric(mm), xlab = "Distance between pairs of location [in m]")
 
 # DHARMa diagnostics
-sim_res <- DHARMa::simulateResiduals(spamm.height, 250)
-plot(sim_res)  ## hm
-
-#####      cattle use on vegetation quantity (NDVI)      #####
-spamm.NDVI <- fitme(NDVI ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = gaussian()) # this take a bit of time
-summary(spamm.NDVI)
-
-# confint(spamm.NDVI, "Site")
-# lower Site upper Site 
-#  -6.134287  35.920273     ## not significant!
-
-sim_res <- DHARMa::simulateResiduals(spamm.NDVI, 250)
-plot(sim_res)  ## looks good
+# sim_res <- DHARMa::simulateResiduals(spamm.height, 250)
+# plot(sim_res)  ## hm
 
 #####      cattle use on vegetation quality       #####
 spamm.protein <- fitme(Protein ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = Gamma(log)) # this take a bit of time
-summary(spamm.protein)
+# summary(spamm.protein)
 
-# confint(spamm.protein, "Site")
-# lower Site   upper Site 
-# -0.010111785  0.004280205   # not significant!
-
-sim_res <- DHARMa::simulateResiduals(spamm.protein, 250)
-plot(sim_res)  
+# sim_res <- DHARMa::simulateResiduals(spamm.protein, 250)
+# plot(sim_res)  
 
 
 #####      cattle use on soil N    #####
-spamm.soilN <- fitme(soil_N ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = Gamma(log)) # this take a bit of time
-summary(spamm.soilN)
+spamm.soilN <- fitme(Soil_N ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat, family = Gamma(log)) # this take a bit of time
+# summary(spamm.soilN)
 
- # confint(spamm.soilN, "Site")
- # lower Site   upper Site 
- # -0.007101439  0.018741301   # not significant
+# sim_res <- DHARMa::simulateResiduals(spamm.soilN, 250)
+# plot(sim_res)  ## looks fine
 
-sim_res <- DHARMa::simulateResiduals(spamm.soilN, 250)
-plot(sim_res)  ## looks fine
+
+######### ----- plot Site  effect --------- ############# 
+distance_effect <- 
+  data.frame(
+    cattle_effect = rep("dist_to_bound", 3),
+    response_variable = c("grass_height", "crude_protein", "soil_N"), 
+    estimate = c(spamm.height$fixef[[2]],
+                 spamm.protein$fixef[[2]],
+                 spamm.soilN$fixef[[2]]
+    ),
+    lower = c(confint(spamm.height, "Site")$interval[[1]],
+              confint(spamm.protein, "Site")$interval[[1]],
+              confint(spamm.soilN, "Site")$interval[[1]]
+    ), 
+    upper = c(confint(spamm.height, "Site")$interval[[2]],
+              confint(spamm.protein, "Site")$interval[[2]],
+              confint(spamm.soilN, "Site")$interval[[2]]
+    ),
+    marginalAIC = c(AIC(spamm.height)[[1]],
+            AIC(spamm.protein)[[1]],
+            AIC(spamm.soilN)[[1]]
+            )
+  )
+ggplot(distance_effect, aes(response_variable, estimate, color = response_variable)) +
+  geom_pointrange(aes(ymin = lower, ymax = upper)) 
+
+write_csv(distance_effect, "./results/cattle_longterm_effects.csv")
