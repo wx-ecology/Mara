@@ -39,10 +39,10 @@ terraclimate_20yr <- ee$ImageCollection("IDAHO_EPSCOR/TERRACLIMATE") %>%
   ee$Image$rename(sprintf("PP_%02d",1:240)) # rename the bands of an image
 
 ee_mara_rain_20yr <- ee_extract(x = terraclimate_20yr, y = study_site_box["Id"], fun = ee$Reducer$mean(), sf = FALSE) %>%
-  pivot_longer(-Id, names_to = "month", values_to = "pr") %>%
-  mutate(month = as.numeric(gsub("PP_", "", month)),
-         year = (as.integer((month-1)/12) + 2001 ),
-         month = rep(1:12, 20))
+  pivot_longer(-Id, names_to = "month_id", values_to = "pr") %>%
+  mutate(month_id = as.numeric(gsub("PP_", "", month_id)),
+         date = lubridate::ymd("2001-01-01") + months(month_id - 1),
+         month =lubridate:: month(date), year =lubridate:: year(date))
 
 write_csv(ee_mara_rain_20yr, "./data/mara_gee_rain_20yr.csv")
 
