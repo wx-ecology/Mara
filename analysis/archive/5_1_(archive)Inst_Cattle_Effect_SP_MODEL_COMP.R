@@ -61,12 +61,14 @@ plot(m.veg.height.gfields, type = "residual-vs-fitted")
 # Running the chains for more iterations may help. See
 # https://mc-stan.org/misc/warnings.html#tail-ess 
 
+cat.dat <- full.dat %>% filter(Cattle != 0)  ## still does not work even if only use cattle data/
+
 m.veg.height.gfields.gamma <- glmmfields(Avg_Height ~ Cattle + Precip,
-                                         data = data.frame(full.dat), 
+                                         data = data.frame(cat.dat), 
                                          family = Gamma(link = "log"),
                                          time = "time",
                                          lat = "lat", lon = "lon",
-                                         nknots = 6, estimate_df = TRUE, iter = 2000, seed = 1, 
+                                         nknots = 6, estimate_df = TRUE, iter = 20000, seed = 1, 
                                          control = list(adapt_delta = 0.95),  save_log_lik = T)
 plot(m.veg.height.gfields.gamma, type = "residual-vs-fitted")
 
