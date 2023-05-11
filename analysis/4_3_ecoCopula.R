@@ -12,13 +12,13 @@ library(igraph)
 #Copulas are a way to construct a multivariate distribution, 
 # can be used as an alternative to hierarchical models 
 # and generalised estimating equations (GEE; as in mvabund).
-
-################### define function ##########################
-# define standardization (and centering) function 
-
-scale_this <- function(x){
-  (x - mean(x, na.rm=TRUE)) / sd(x, na.rm=TRUE)
-}
+# 
+# ################### define function ##########################
+# # define standardization (and centering) function 
+# 
+# scale_this <- function(x){
+#   (x - mean(x, na.rm=TRUE)) / sd(x, na.rm=TRUE)
+# }
 
 
 ############################## covariates note ################################
@@ -81,24 +81,5 @@ corrplot(mara_gr$best_graph$cov,
          method = "circle", type = "lower",tl.col = "black",
          col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
 
-
-cov_out <- mara_gr$best_graph$cov
-saveRDS(cov_out, "./results/ecoCoupla_cor_network.RDS")
-
 cov_out <- mara_gr$best_graph$part
 saveRDS(cov_out, "./results/ecoCoupla_partcor_network.RDS")
-
-igraph_out <- mara_gr$best_graph$igraph_out
-
-mara.graph <- igraph_out %>% ggraph('kk') + # see ?layout_tbl_graph_igraph
-  geom_edge_fan0(aes( colour = partcor, width=partcor)) +
-  scale_edge_width(range = c(1, 4))+
-  scale_edge_color_gradient2(low="#b2182b",mid="white",high="#2166ac")+
-  geom_node_label(aes(label=name), repel = TRUE, nudge_y = 0)+
-  geom_node_point(size=2)+
-  theme_void() +
-  theme(legend.position = 'none') 
-
-mara.graph
-# ggsave("./figures/mara.graph.png", mara.graph ,
-#        width = 8, height = 5, device = ragg::agg_png)

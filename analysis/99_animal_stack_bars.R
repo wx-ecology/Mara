@@ -4,7 +4,6 @@ pal12 <- c( "#fdcce5", "#bd7ebe",  "#BF7E7E", "#ffb55a",     "#ffee65",     "#be
 library(tidyverse)
 library(ggplot2)
 library(lubridate)
-library(waffle)
 library(bbplot)
 ### figure - waffle plot showing animal composition over time overlapped with precipitation ###
 
@@ -34,6 +33,7 @@ data.waffle <- data %>%
 ##########################################################################################
 ############# waffle chart ######################################################
 ##########################################################################################
+# library(waffle)
 # p.waffle <- data.waffle %>%
 #   ggplot(aes(fill = Species, values = Count)) +
 #   geom_waffle(color = "white", size = 0.03, nrow = 50, flip = TRUE) +
@@ -58,9 +58,9 @@ p_count_pr <-  ggplot() +
   geom_bar(data = data.waffle, aes(fill = Species, y = Count, x = Yr_Mo),
            color = "white", size = 0.1, position = "stack", stat="identity") +
     geom_line(data = data.pr, aes(x = Yr_Mo, y = pr / coeff.pr), 
-              color = "#0671c4", size = 1.5, alpha = 0.5) +
+              color = "grey40", linewidth = 1.5, alpha = 0.5, linetype="dashed") +
     scale_y_continuous(
-      name = "Dung count",
+      name = "Habitat usage (Dung count)",
       sec.axis = sec_axis(~.*coeff.pr, name="Precipitation (mm)")
     ) +
   bbplot::bbc_style()  +
@@ -69,7 +69,7 @@ p_count_pr <-  ggplot() +
          axis.text = element_text(size = 14),
          axis.title.y = element_text(size=16,
                                    color="#222222"),
-         legend.text = element_text(size = 12, color = "grey40"),
+         legend.text = element_text(size = 14, color = "grey40"),
          legend.box.margin = margin(t = 10),
          legend.background = element_rect(
            color = "grey40", 
@@ -78,9 +78,9 @@ p_count_pr <-  ggplot() +
          ),
          strip.text = element_blank()) +
   guides(fill = guide_legend(ncol = 6))
-# p_count_pr
-# ggsave("./figures/count_precipitation.png", p_count_pr, 
-#         width = 20, height = 8, device = ragg::agg_png)
+p_count_pr
+ggsave("./figures/materials/count_precipitation.png", p_count_pr,
+        width = 20, height = 8, device = ragg::agg_png)
 
 
 ##########################################################################################
