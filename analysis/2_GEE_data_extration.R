@@ -58,7 +58,7 @@ write_csv(ee_mara_rain_20yr, "./data/mara_gee_rain_20yr.csv")
 ### -------------------- extract NDVI data from MODIS -----------
 NDVI.ic <- ee$ImageCollection('MODIS/006/MOD13Q1') %>%  #Vegetation Indices 16-Day L3 Global 250m
   ee$ImageCollection$filterDate("2018-01-01", "2021-01-01") %>%
-  ee$ImageCollection$map(function(x) x$select("NDVI")) # Select only precipitation bands
+  ee$ImageCollection$map(function(x) x$select("NDVI")) # Select only NDVI bands
 # ee_print(NDVI.ic)  #get to know that we have 69 images 
 
 # extract image dates from the image collection to later combine with NDVI 

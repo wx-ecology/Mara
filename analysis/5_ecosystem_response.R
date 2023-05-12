@@ -41,17 +41,17 @@ full.dat.trans$Total <- scale(full.dat$Total)
 full.dat.trans$Cattle <- scale(full.dat$Cattle)
 full.dat.trans$Site <- scale(full.dat$Site)
 
-spamm.height.dist <- fitme(Avg_Height ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans) # this take a bit of time
+spamm.height.dist <- fitme(Avg_Height ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.protein.dist <- fitme(Protein ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.NDVI.dist <- fitme(NDVI ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.soilN.dist <- fitme(Soil_N ~ Site + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 
-spamm.height.cattle <- fitme(Avg_Height ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans) # this take a bit of time
+spamm.height.cattle <- fitme(Avg_Height ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans) 
 spamm.protein.cattle <- fitme(Protein ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.NDVI.cattle <- fitme(NDVI ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.soilN.cattle <- fitme(Soil_N ~ Cattle + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 
-spamm.height.total <- fitme(Avg_Height ~ Total + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans) # this take a bit of time
+spamm.height.total <- fitme(Avg_Height ~ Total + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.protein.total <- fitme(Protein ~ Total + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.NDVI.total <- fitme(NDVI ~ Total + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
 spamm.soilN.total <- fitme(Soil_N ~ Total + Precip + sin_month + cos_month + Matern(1 | x + y), data = full.dat.trans)
@@ -138,6 +138,9 @@ total_effect <-
   )
 # ggplot(cattle_effect, aes(response_variable, estimate, color = response_variable)) +
 #   geom_pointrange(aes(ymin = lower, ymax = upper)) 
+
+response <- rbind(total_effect, cattle_effect, distance_effect)
+write_csv(response, "results/ecosystem_effects.csv")
 
 ### ---- diagnostics ------ #
 # # visualize spatial autocorrelation
