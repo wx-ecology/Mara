@@ -1,5 +1,7 @@
 # this script fit multivariate model to examine whether community structure is influenced by env covariates, and how animal composition change in response to distance to boundary
 
+### MAY 17 2023   CONSIDER ARCHIVING THIS SCRiPT
+
 pal12 <- c( "#fdcce5", "#bd7ebe",  "#BF7E7E", "#ffb55a",     "#ffee65",     "#beb9db",   "#b2e061",   "#baba97",    "#E9C09B",   "#7eb0d5",   "#8bd3c7" , "#fd7f6f" )
 #         "Buffalo" ,  "Dikdik"  ,"Eland"  ,"Elephant", "Grants_Gazelle",  "Impala",  "Thompsons_Gazelle", "Topi",   "Waterbuck", "Wildebeest", "Zebra"  ,  "Cattle" 
 
@@ -127,13 +129,6 @@ mara.m3 <- manyglm(COUNT ~ Transect + Site +
 #################### ----------  model diagnostics ----------- #########################
 # plot of residuals show that the model assumption is met and the model is a good fit.
 plot(mara.m)  
-
-# # plot semi-variogram() to examine spatial-autocorrelation in residuals 
-# df.cor <- data.frame(mara.m$residuals, x = data$X, y = data$Y) 
-# v = variogram(Cattle~1, data = df.cor %>% dplyr::select(Cattle, x, y), locations = ~ x + y)
-# m = fit.variogram(v, fit.method = 1, vgm("Exp"))
-# plot(v, model = m)
-
 
 ##################### ------------------- hypothesis testing --------------- ###############
 # use resampling to test for significant community level or species level responses to our predictors.
