@@ -130,10 +130,10 @@ plot(mpost$Beta)
 par(mfrow=c(2,2))
 # beta is the species niches 
 hist(effectiveSize(mpost$Beta), main="ess(beta)", breaks = 20)
-hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks = 20)
+hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks = 20)  # <-- needs to be reported
 # omega is the residual species associations 
 hist(effectiveSize(mpost$Omega[[1]]), main="ess(omega)", breaks = 20)  # ess omega is not the best. some of them have low effective sample saize.
-hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20)
+hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20) # <-- needs to be reported
 
 # ------------------------------------ explanatory power -------------------------------------------------- #
 #To assess model fit 
@@ -198,7 +198,8 @@ dev.off()
 
 ## forage quantity, measured as persent grazed and height from last month, plays a more important role than quality, measured as protein from the past month. 
 
-groupnames = c("Distance to border", "Forage quantity (% grazed)", "Forage quantity (grass height)", "Forage quality", "Precipitation", "Season")
+groupnames = c("Distance to border", "Site utilization", 
+               "Forage quantity", "Forage quality", "Precipitation", "Season")
 group = c(1,1,2,5,4,3,6,6)
 VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
 # plotVariancePartitioning(m,VP, las = 2)
