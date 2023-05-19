@@ -4,6 +4,7 @@
 library(ggraph)
 library(igraph)
 library(gridExtra)
+library(circlize)
 
 # ---------- the function below is adapted from ecoCoupla package utils.R --------- #
 ## turn a correlation matrix into a graph object 
@@ -18,12 +19,43 @@ graph_from_cor <- function(cor){
 }
 
 #  ----------  data prep ----------# 
-raw_cor <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled.csv") %>% drop_na() %>% 
-  filter(Yr_Mo != "2018-05",
-         !is.na(Protein_lag1),
-         !is.na(Height_lag1)) %>%   # the first month does not have previous month measurement
+raw_count <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled.csv") %>% 
   dplyr::select(Cattle, Wildebeest, Zebra, Thompsons_Gazelle, Impala, Topi,
-                Eland, Buffalo, Grants_Gazelle, Waterbuck, Dikdik, Elephant) %>%
+                Eland, Buffalo, Grants_Gazelle, Waterbuck, Dikdik, Elephant) %>% replace(is.na(.), 0)
+
+
+# ## -- prep for chord diagram --- ##
+# # create list of connections
+# cooccur <- raw_count %>% replace(is.na(.), 0)
+# cooccur [cooccur > 0] <- 1
+# 
+# # Create an empty data frame to store species pairs
+# pairs_df <- data.frame(Species1 = character(),
+#                        Species2 = character(),
+#                        stringsAsFactors = FALSE)
+# 
+# # Iterate over each row in the data frame
+# for (i in 1:nrow(cooccur)) {
+#   # Get the column indices where species is present (value equals 1)
+#   present_species <- which(cooccur[i,] == 1)
+#   
+#   if (length(present_species) >= 2) {
+#     # Generate all possible pairs of present species
+#     species_pairs <- combn(present_species, 2)
+#   } else { next }
+#   # Append the pairs to the new data frame
+#   pairs_df <- rbind(pairs_df, data.frame(Species1 = colnames(cooccur)[species_pairs[1,]],
+#                                          Species2 = colnames(cooccur)[species_pairs[2,]],
+#                                          stringsAsFactors = FALSE))
+# }
+# 
+# # Transform input data in a adjacency matrix
+# adjacencyData <- with(pairs_df, table(Species1, Species2))
+# 
+# x <- chordDiagram(adjacencyData, transparency = 0.5)
+
+# make a raw correlation df 
+raw_cor <- raw_count %>%
   as.matrix(.) %>% # 1,455 x 35. Some months/sites missing values. Dropped. 
   cor(.) %>% graph_from_cor(.)
 
