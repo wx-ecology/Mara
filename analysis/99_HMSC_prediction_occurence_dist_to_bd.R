@@ -115,6 +115,6 @@ p.z <- pred.df %>%
 
 p <- plot_grid(p.c, p.z, p.w, nrow = 1)
 
-ggsave("./figures/HMSC_prediction_3spp.png", p, 
+ggsave("./figures/materials/HMSC_prediction_3spp.png", p, 
        width = 20, height = 4, device = ragg::agg_png)
 
