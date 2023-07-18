@@ -33,9 +33,9 @@ data <- read_csv("./data/cleaned_animal_data.csv") %>%
           Pgrazed = Percent_Grazed.x,
           Pgrazed_lag1 = Percent_Grazed.y)  # xxx_lag1 represents the NDVI value from the previous month at the same site
 # 1,680 × 39
-write_csv(data, "./data/for-spp-relationship/mara-cooccurence-compiled.csv") 
+write_csv(data, "./data/mara-cooccurence-compiled.csv") 
 
 
 # ---- subsetting the data ------- #
 data_subset <- data %>% filter(month_id <= 23)
-write_csv(data_subset, "./data/for-spp-relationship/mara-cooccurence-compiled-subset.csv") 
+write_csv(data_subset, "./data/mara-cooccurence-compiled-subset.csv") 

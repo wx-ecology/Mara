@@ -7,7 +7,7 @@ library(Hmsc)
 library(corrplot)
 
 # -----data prep ---
-data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled-subset.csv") %>%
+data <- read_csv("./data/mara-cooccurence-compiled-subset.csv") %>%
   #dplyr::select(-Northing, -Easting) %>% # this northing and easting is measured by GPS in the field with lots of noises. using site GPS locations instead.
   mutate(Site = as.numeric(Site),  # distance to boundary 
          sin_month = sin(2*pi*Month/12),
@@ -21,7 +21,7 @@ data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled-subset.c
     Eland, Buffalo, Grants_Gazelle, Waterbuck, Dikdik, Elephant, # species counts
     Site, Name, Pgrazed_lag1, Precip, Protein_lag1, Height_lag1, sin_month, cos_month # environmental data
   ) %>%
-  drop_na(.) # 1516 * 23 
+  drop_na(.) # 1039 * 23 
 
 # community data 
 Y = data %>% 
