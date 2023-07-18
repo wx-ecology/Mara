@@ -7,7 +7,7 @@ library(Hmsc)
 library(corrplot)
 
 # -----data prep ---
-data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled.csv") %>%
+data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled-subset.csv") %>%
   #dplyr::select(-Northing, -Easting) %>% # this northing and easting is measured by GPS in the field with lots of noises. using site GPS locations instead.
   mutate(Site = as.numeric(Site),  # distance to boundary 
          sin_month = sin(2*pi*Month/12),
@@ -80,7 +80,7 @@ thin = 1000
 nParallel = 2
 ModelDir = file.path(getwd(), "results/Hmsc_model")
 
-run.model = TRUE
+run.model = FALSE
 if(run.model){ 
   for (thin in c(1, 10, 100,1000)){  # thin = 1000 took 107 hours
     m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
@@ -121,7 +121,7 @@ mpost = convertToCodaObject(m)
 # a good plot should show that different chains look identical and the chains mix very well, and they seem to have reached 
 # a stationary distribution (e.g. the first half of the recorded interations looks statistically identical to the second half of the recorded iterations).
 plot(mpost$Beta)
-#plot(mpost$Beta[,1])
+plot(mpost$Beta[,1])
 
 ## alternatively, we evaluate MCMC convergence in a quantitative way in terms of effective sample size and potential scale reduction factors.
 # we want to see the effective sample sizes are very close to the theoretical value of the actual number of
@@ -143,10 +143,9 @@ MF = evaluateModelFit(hM=m, predY=preds) # explanatory power varies for differen
 # For Poisson models, the observed and predicted data are also subsetted to conditional on presence, for which the root-mean-square error and pseudo-R2 based on squared spearman correlation are computed (C.RMSE, C.SR2).
 # we stick with the psudo R2 here. 
 # hist(MF$SR2, xlim = c(0,1), main=paste0("Mean = ", round(mean(MF$SR2),2)), breaks = 10) # for poisson models, pseudo-R2 is computated as squared spearman correlation between observed and predicted values, times the sign of the correlation (SR2)
-round(mean(MF$SR2),2)
+round(mean(MF$SR2),2)  
 round(sd(MF$SR2),2)
-# some species are high some are low. The mean = 0.43, sd = 0.25 across all species. 
-# the new transient has the same results.
+# some species are high some are low. The mean = 0.46, sd = 0.24 across all species. # updated July 18, 2023
 
 # ------ predictive power ------
 # through two-fold cross validation 
@@ -154,7 +153,7 @@ round(sd(MF$SR2),2)
 # Set run.cross.validation = TRUE to perform the cross-validation and to save the results.
 # Set run.cross.validation = FALSE to read in results from cross-validation that you have run previously.
 
-run.cross.validation = TRUE # start with TRUE when you introduce the script
+run.cross.validation = FALSE # start with TRUE when you introduce the script
 filename=file.path(ModelDir, paste0("CV_sample_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains, "newTransient"))
 
 if(run.cross.validation){
@@ -207,7 +206,7 @@ VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
 
 ## beta estimates
 postBeta = getPostEstimate(m, parName = "Beta")
-#saveRDS(list(m, postBeta), file = file.path("./results/Hmsc_beta_estimates.RDS"))
+# saveRDS(list(m, postBeta), file = file.path("./results/Hmsc_beta_estimates.RDS"))
 par(mar = c(8, 8, 5, 5))
 plotBeta(m, post = postBeta, param = "Support", supportLevel = 0.95, mar = c(8,1,2,1)) # red are parameters significantly positive and blue are ones significantly negative. 
 
@@ -217,7 +216,7 @@ supportLevel = 0.95 #plot only those associations for which the posterior probab
 toPlot = ((OmegaCor[[1]]$support>supportLevel)
           + (OmegaCor[[1]]$support<(1-supportLevel))>0)*OmegaCor[[1]]$mean
 
-saveRDS(toPlot, "./results/Hmsc_network_95.RDS")
+#saveRDS(toPlot, "./results/Hmsc_network_95.RDS")
 
 corrplot(toPlot, method = "circle", type = "lower", tl.col = "black",
          col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
@@ -229,7 +228,7 @@ supportLevel = 0.5
 toPlot = ((OmegaCor[[1]]$support>supportLevel)
           + (OmegaCor[[1]]$support<(1-supportLevel))>0)*OmegaCor[[1]]$mean
 
-saveRDS(toPlot, "./results/Hmsc_network_50.RDS")
+# saveRDS(toPlot, "./results/Hmsc_network_50.RDS")
 
 corrplot(toPlot, method = "circle", type = "lower",tl.col = "black",
          col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
@@ -248,7 +247,7 @@ summary(mpost$Alpha[[1]], quantiles = c(0.025, 0.5, 0.975))
 # of the alphas overlap with zero. Thus, the variation is independent among the survey routes.
 # Note that in case of the model without environmental covariates (not shown here but see the book),
 # the variation in the leading factor occurs at the scale of ca. 150 km, reflecting the scale
-# at which the relevant environmental conditions vary.
+# at which the relevant environmental conditions vary.   ## << --- this needs to be reported.
 
 
 
