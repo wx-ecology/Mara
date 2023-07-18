@@ -265,7 +265,7 @@ rain_history <- read_csv("./data/mara_gee_rain_20yr.csv")
 # rain_history %>% ggplot( aes(x = as.factor(month), y = pr)) +
 #   geom_boxplot()
 rain_sum <- rain_history %>% group_by(month) %>% summarise(mean = mean(pr), sd = sd(pr))
-## driest, July, pr = 13.4; wettest, April, pr = 135
+## driest, July, pr = 13.4; wettest, April, pr = 135.0
 
 ### ------ prediction in a dry time ------- ### 
 Gradient_dry = constructGradient(m,focalVariable = "Site", 
@@ -274,13 +274,13 @@ Gradient_dry = constructGradient(m,focalVariable = "Site",
                                                             "cos_month" = list(3, cos(2*pi*7/12)))) 
 predY_dry = predict(m, Gradient=Gradient_dry, expected = TRUE) # made 1000 prediction
 
-# default plotting function  
-# # Occurrence probability of Corvus monedula
-# # sppecies 1 - cattle, 2 - widebeest, 3 - zebra, 4 - T gazelle, 5 - impala, 6 - topi, 7 - eland,
-# # 8 - buffalo, 9 - G gazelle, 10 - waterbuck, 11 - dikdik, 12 - elephant
-# plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 1, showData = TRUE, q = c(0.05, 0.5, 0.95)) # cattle
-# plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 2, showData = TRUE, q = c(0.05, 0.5, 0.95)) # wildebeest
-# plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 3, showData = TRUE, q = c(0.05, 0.5, 0.95)) # zebra
+# default plotting function
+# Occurrence probability of Corvus monedula
+# sppecies 1 - cattle, 2 - widebeest, 3 - zebra, 4 - T gazelle, 5 - impala, 6 - topi, 7 - eland,
+# 8 - buffalo, 9 - G gazelle, 10 - waterbuck, 11 - dikdik, 12 - elephant
+plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 1, showData = TRUE, q = c(0.05, 0.5, 0.95)) # cattle
+plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 2, showData = TRUE, q = c(0.05, 0.5, 0.95)) # wildebeest
+plotGradient(m, Gradient_dry, pred=predY_dry, measure="Y", index = 3, showData = TRUE, q = c(0.05, 0.5, 0.95)) # zebra
 
 ### ------ prediction in a wet time ------- ###    
 Gradient_wet = constructGradient(m, focalVariable = "Site", 
