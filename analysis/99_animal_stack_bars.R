@@ -131,6 +131,6 @@ p_count_biomass <- ggplot() +
          strip.text = element_blank()) +
   guides(fill = guide_legend(ncol = 6))
 p_count_biomass
- ggsave("./figures/count_biomass.png", p_count_biomass, 
+ ggsave("./figures/materials/count_biomass.png", p_count_biomass, 
          width = 20, height = 8, device = ragg::agg_png)
  
