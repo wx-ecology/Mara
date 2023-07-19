@@ -5,23 +5,23 @@ library(tidyverse)
 library(ggplot2)
 library(bbplot)
 pal3 <- c( "#fd7f6f", "#7eb0d5", "#8bd3c7" )
-effect <- read_csv("./results/ecosystem_effects.csv") %>%
+effect <- read_csv("./results/tables/ecosystem_effects.csv") %>%
   mutate(effect = case_when(
     effect == "cattle_use" ~ "cattle use",
-    effect == "total_use" ~ "total ungulate use",
-    TRUE ~ "distance to boundary"
+    effect == "total_use" ~ "all ungulates",
+    TRUE ~ "wild ungulates"
   ), 
-  effect = factor(effect, levels = c("cattle use", "total ungulate use", "distance to boundary")) ,
+  effect = factor(effect, levels = c("cattle use", "wild ungulates", "all ungulates")) ,
   response_variable = case_when(
-    response_variable == "grass_height" ~ "vegetation quantity (grass height)",
-    response_variable == "NDVI" ~ "vegetation quantity (NDVI)",
-    response_variable ==  "crude_protein" ~ "vegetation quality (crude protein)", 
-    response_variable == "soil_N" ~ "soil quality (soil N)"
+    response_variable == "grass_height" ~ "veg.quantity",
+    response_variable == "NDVI" ~ "veg.greenness",
+    response_variable ==  "crude_protein" ~ "veg.quality", 
+    response_variable == "soil_N" ~ "soil property"
   ),
-  response_variable = factor(response_variable, levels = c("vegetation quantity (grass height)", 
-                                                           "vegetation quantity (NDVI)",
-                                                           "vegetation quality (crude protein)", 
-                                                           "soil quality (soil N)"))
+  response_variable = factor(response_variable, levels = c("veg.quantity", 
+                                                           "veg.quality",
+                                                           "veg.greenness", 
+                                                           "soil property"))
   )
 
 
