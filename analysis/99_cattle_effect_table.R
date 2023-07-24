@@ -7,11 +7,11 @@ library(bbplot)
 pal3 <- c( "#fd7f6f", "#7eb0d5", "#8bd3c7" )
 effect <- read_csv("./results/tables/ecosystem_effects.csv") %>%
   mutate(effect = case_when(
-    effect == "cattle_use" ~ "cattle use",
+    effect == "cattle_use" ~ "cattle",
     effect == "total_use" ~ "all ungulates",
     TRUE ~ "wild ungulates"
   ), 
-  effect = factor(effect, levels = c("cattle use", "wild ungulates", "all ungulates")) ,
+  effect = factor(effect, levels = c("cattle", "wild ungulates", "all ungulates")) ,
   response_variable = case_when(
     response_variable == "grass_height" ~ "veg.quantity",
     response_variable == "NDVI" ~ "veg.greenness",

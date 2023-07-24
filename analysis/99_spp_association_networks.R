@@ -70,7 +70,7 @@ copula_partcor <- readRDS("./results/ecoCoupla_partcor_network.RDS")
 # write_csv(hmsc_hi %>% as.tibble(), "./results/tables/correlations_hmsc.csv")
 # write_csv(copula_partcor %>% as.tibble(), "./results/tables/correlations_copula.csv")
 
-
+######## supp figure with correlation matrix #########
 a <- ggcorrplot(raw_cor, type = "lower", ggtheme = ggplot2::theme_minimal,  
                 colors = c("#b2182b", "white","#2166ac"),
                 lab = TRUE, digits = 2, lab_size = 3, show.legend = F, tl.cex = 10)
@@ -159,3 +159,18 @@ c <- copula_igraph_partcor %>%
 
 ggsave("./figures/materials/mara_graph.png", grid.arrange(a, b, c, nrow = 1),
        width = 13, height = 6, device = ragg::agg_png)
+
+##########################################
+########### descriptive stats ############
+##########################################
+raw_cor_tb <- raw_cor %>% as_tibble(.) %>% 
+  mutate(spp2 = rownames(raw_cor)) %>% select(Cattle, spp2)
+raw_cor_tb %>% filter(Cattle < 0)
+
+hmsc_hi_tb <- hmsc_hi %>% as_tibble(.) %>% 
+  mutate(spp2 = rownames(hmsc_hi)) %>% select(Cattle, spp2)
+hmsc_hi_tb %>% filter(Cattle < 0)
+
+copula_partcor_tb <- copula_partcor %>% as_tibble(.) %>% 
+  mutate(spp2 = rownames(copula_partcor)) %>% select(Cattle, spp2)
+copula_partcor_tb %>% filter(Cattle < 0)

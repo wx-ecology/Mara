@@ -10,7 +10,7 @@ library(GGally)
 ############################################
 ########## explore grass sheet #############
 ############################################
-grass <- read_csv("./data/cleaned__grass__data.csv")
+grass <- read_csv("./data/cleaned_grass_data.csv")
 
 # corregram
  grass %>%

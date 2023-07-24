@@ -12,12 +12,12 @@ gee_data <- read_csv("./data/mara_gee_VI_rad.csv") %>% select(Year, Month, Trans
 grass <- read_csv("./data/cleaned_grass_data.csv") %>% select(Year, Month, Transect, Site, Avg_Height)
 
 data <- read_csv("./data/cleaned_animal_data.csv") %>% 
-  mutate( Date = ymd(Date), 
-          Yr_Mo = as.factor(format_ISO8601(Date, precision = "ym"))) %>%
+  mutate( Date = ymd(Date)) %>%
+  filter( Date < "2019-12-01") %>%
+  mutate(Yr_Mo = as.factor(format_ISO8601(Date, precision = "ym"))) %>%
   arrange(Year, Month) %>%
   left_join(gee_data, by = c("Year", "Month", "Transect", "Site")) %>%
-  left_join(grass, by = c("Year", "Month", "Transect", "Site")) %>%
-  filter( Date < "2019-12-01")
+  left_join(grass, by = c("Year", "Month", "Transect", "Site")) 
 
 data.waffle <- data %>% 
   pivot_longer(cols = Cattle:Ostrich, names_to = "Species", values_to = "Count") %>%

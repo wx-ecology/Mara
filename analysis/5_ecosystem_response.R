@@ -212,6 +212,8 @@ total_effect <-
 # ggplot(cattle_effect, aes(response_variable, estimate, color = response_variable)) +
 #   geom_pointrange(aes(ymin = lower, ymax = upper)) 
 
+response <- rbind(cattle_effect, wild_effect, total_effect)
+
 response_estimate <- rbind(total_effect, cattle_effect, wild_effect) %>% 
   select(-lower, -upper, -mAIC) %>%
   pivot_wider(names_from = response_variable, values_from = estimate)
