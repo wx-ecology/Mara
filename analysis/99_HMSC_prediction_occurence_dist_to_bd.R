@@ -118,3 +118,202 @@ p <- plot_grid(p.c, p.z, p.w, nrow = 1)
 ggsave("./figures/materials/HMSC_prediction_3spp.png", p, 
        width = 20, height = 4, device = ragg::agg_png)
 
+
+### ==================== other species ================= ##
+#  5% - 95% quantiles of draws 
+good.index.tgazelle <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Thompsons_Gazelle, index) %>%
+  filter(Thompsons_Gazelle >=quantile(Thompsons_Gazelle, 0.05) & Thompsons_Gazelle <= quantile(Thompsons_Gazelle, 0.95)) %>%
+  pull(index)
+
+good.index.topi <-   pred.df %>% 
+  filter(dist == 1) %>%
+  select(Topi, index) %>%
+  filter(Topi >= quantile(Topi, 0.05) & Topi <= quantile(Topi, 0.95)) %>%
+  pull(index)
+
+good.index.eland <-   pred.df %>% 
+  filter(dist == 1) %>%
+  select(Eland, index) %>%
+  filter(Eland >= quantile(Eland, 0.05) & Eland <= quantile(Eland, 0.95)) %>%
+  pull(index)
+
+good.index.ggazelle <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Grants_Gazelle, index) %>%
+  filter(Grants_Gazelle >= quantile(Grants_Gazelle, 0.05) & Grants_Gazelle <= quantile(Grants_Gazelle, 0.95)) %>%
+  pull(index)
+
+good.index.buffalo <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Buffalo, index) %>%
+  filter(Buffalo >=quantile(Buffalo, 0.05) & Buffalo <= quantile(Buffalo, 0.95)) %>%
+  pull(index)
+
+good.index.waterbuck <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Waterbuck, index) %>%
+  filter(Waterbuck >=quantile(Waterbuck, 0.05) & Waterbuck <= quantile(Waterbuck, 0.95)) %>%
+  pull(index)
+
+good.index.dikdik <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Dikdik, index) %>%
+  filter(Dikdik >=quantile(Dikdik, 0.05) & Dikdik <= quantile(Dikdik, 0.95)) %>%
+  pull(index)
+
+good.index.elephant <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Elephant, index) %>%
+  filter(Elephant >=quantile(Elephant, 0.05) & Elephant <= quantile(Elephant, 0.95)) %>%
+  pull(index)
+
+good.index.impala <-  pred.df %>% 
+  filter(dist == 1) %>%
+  select(Impala, index) %>%
+  filter(Impala >=quantile(Impala, 0.05) & Impala <= quantile(Impala, 0.95)) %>%
+  pull(index)
+
+p.tg <- pred.df %>% 
+  select(Thompsons_Gazelle, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Thompsons_Gazelle, group = index)) +
+  geom_line(alpha = 0.1, color = "#b2e061")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Thompsons's gazelle") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.tp <- pred.df %>% 
+  select(Topi, index, xx) %>%
+  filter(index %in% good.index.topi) %>%
+  ggplot(aes(x = xx, y = Topi, group = index)) +
+  geom_line(alpha = 0.1, color = "#7eb0d5")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Topi") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+
+p.e <- pred.df %>% 
+  select(Eland, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Eland, group = index)) +
+  geom_line(alpha = 0.1, color = "#BF7E7E")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Eland") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.gg <- pred.df %>% 
+  select(Grants_Gazelle, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Grants_Gazelle, group = index)) +
+  geom_line(alpha = 0.1, color = "#ffee65")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Grant's gazelle") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+
+p.buffalo <- pred.df %>% 
+  select(Buffalo, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Buffalo, group = index)) +
+  geom_line(alpha = 0.1, color = "#fdcce5")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Buffalo") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.waterbuck <- pred.df %>% 
+  select(Waterbuck, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Waterbuck, group = index)) +
+  geom_line(alpha = 0.1, color = "#E9C09B")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Waterbuck") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.dikdik <- pred.df %>% 
+  select(Dikdik, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Dikdik, group = index)) +
+  geom_line(alpha = 0.1, color = "#bd7ebe")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Dik dik") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.elephant <- pred.df %>% 
+  select(Elephant, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Elephant, group = index)) +
+  geom_line(alpha = 0.1, color = "#ffb55a")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Elephant") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p.impala <- pred.df %>% 
+  select(Impala, index, xx) %>%
+  filter(index %in% good.index.tgazelle) %>%
+  ggplot(aes(x = xx, y = Impala, group = index)) +
+  geom_line(alpha = 0.1, color = "#beb9db")  +
+  xlab("Distance to boundary (km)") +
+  scale_x_continuous(breaks = c(3,6,9,12), labels = c(3,6,9,12)) +
+  labs(subtitle = "Impala") + 
+  bbplot::bbc_style() +
+  theme (axis.text.x =  element_text(size=14),
+         axis.text = element_text(size = 14),
+         axis.title.x = element_text(size=16,
+                                     color="#222222"),
+         plot.subtitle = element_text(size = 18))
+
+p2 <- plot_grid(p.buffalo, p.dikdik, p.e, p.elephant, p.gg, p.impala,
+                p.tg, p.tp, p.waterbuck, ncol = 3)
+
+ggsave("./figures/materials/supp_spp_prediction_9spp.png", p2, 
+       width = 16, height = 16, device = ragg::agg_png) 

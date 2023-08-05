@@ -50,6 +50,7 @@ tableS2 <- a2 %>% filter(spp != "Cattle") %>%
   group_by(spp) %>%
   summarise ( n = sum(count)) %>%
   mutate (prec_cooccur = n/nrow(a1))
+# write_csv(tableS2, "./results/tables/supp_tableS2_cattle_wild_cooccur.csv")
 
 #####################################################################
 ############################# figure S1 #############################

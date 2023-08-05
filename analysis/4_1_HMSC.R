@@ -7,7 +7,7 @@ library(Hmsc)
 library(corrplot)
 
 # -----data prep ---
-data <- read_csv("./data/for-spp-relationship/mara-cooccurence-compiled-subset.csv") %>%
+data <- read_csv("./data/mara-cooccurence-compiled-subset.csv") %>%
   #dplyr::select(-Northing, -Easting) %>% # this northing and easting is measured by GPS in the field with lots of noises. using site GPS locations instead.
   mutate(Site = as.numeric(Site),  # distance to boundary 
          sin_month = sin(2*pi*Month/12),
@@ -80,7 +80,7 @@ thin = 1000
 nParallel = 2
 ModelDir = file.path(getwd(), "results/Hmsc_model")
 
-run.model = TRUE
+run.model = FALSE
 if(run.model){ 
   for (thin in c(1, 10, 100,1000)){  # thin = 1000 took 107 hours
     m = Hmsc(Y=Y, XData = XData,  XFormula = XFormula,
@@ -154,7 +154,7 @@ round(sd(MF$SR2),2)
 # Set run.cross.validation = TRUE to perform the cross-validation and to save the results.
 # Set run.cross.validation = FALSE to read in results from cross-validation that you have run previously.
 
-run.cross.validation = TRUE # start with TRUE when you introduce the script
+run.cross.validation = FALSE # start with TRUE when you introduce the script
 filename=file.path(ModelDir, paste0("CV_sample_thin_", as.character(m$thin), "_samples_", samples,"_chains_", nChains, "newTransient"))
 
 if(run.cross.validation){
@@ -190,22 +190,18 @@ dev.off()
 # variance component accounts also for co-variation within the group whereas co-variation among groups is ignored 
 #  The intercept does not have any variation, and thus it will not contribute to the variance partitioning 
 
-# groupnames = c("Distance-to-border","Forage-quality", "Forage-quantity", "Precipitation", "Season")
-# group = c(1,1,3,4,2,3,5,5) 
-# VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
-# # plotVariancePartitioning(m,VP, las = 2)
-# saveRDS(VP, file = file.path("./results/Hmsc_VP.RDS"))
-
 ## forage quantity, measured as persent grazed and height from last month, plays a more important role than quality, measured as protein from the past month. 
 
 groupnames = c("Distance to border", "Site utilization", 
                "Forage quantity", "Forage quality", "Precipitation", "Season")
-group = c(1,1,2,5,4,3,6,6)
+group = c(1,1,2,5,4,3,6,6) 
 VP = computeVariancePartitioning(m, group = group, groupnames = groupnames)
 # plotVariancePartitioning(m,VP, las = 2)
 # saveRDS(VP, file = file.path("./results/Hmsc_VP.RDS")) ## <--- continue 99_HMSC_Variance_Partitioning.R for making the plot
 
 ## beta estimates
+postBeta = getPostEstimate(m, parName = "Beta")
+postBeta2 = getPostEstimate(m, parName = "Beta", q = c(0.05))
 postBeta = getPostEstimate(m, parName = "Beta")
 #saveRDS(list(m, postBeta), file = file.path("./results/Hmsc_beta_estimates.RDS"))
 par(mar = c(8, 8, 5, 5))

@@ -109,6 +109,27 @@ dist.models.mAIC <- rbind(non_distance_effect, distance_effect, distance2_effect
   pivot_wider(names_from = response_variable, values_from = mAIC)
 write_csv(dist.models.mAIC, "./results/tables/spatial_comp_AIC.csv")
 
+distance.effect.estimate <- 
+  data.frame(
+    effect = rep("linear", 4),
+    response_variable = c("grass_height", "crude_protein", "soil_N", "NDVI"), 
+    estimate = c(spamm.height.dist$fixef[[2]],
+                 spamm.protein.dist$fixef[[2]],
+                 spamm.soilN.dist$fixef[[2]],
+                 spamm.NDVI.dist$fixef[[2]]
+    ),
+    lower = c(confint(spamm.height.dist, "Site")$interval[[1]],
+              confint(spamm.protein.dist, "Site")$interval[[1]],
+              confint(spamm.soilN.dist,"Site")$interval[[1]],
+              confint(spamm.NDVI.dist, "Site")$interval[[1]]
+    ), 
+    upper = c(confint(spamm.height.dist, "Site")$interval[[2]],
+              confint(spamm.protein.dist, "Site")$interval[[2]],
+              confint(spamm.soilN.dist, "Site")$interval[[2]],
+              confint(spamm.NDVI.dist, "Site")$interval[[2]]
+    ))
+write_csv(distance.effect.estimate , "./results/tables/spatial_comp_dist1_estimate.csv")
+
 
 ####################################################
 ########## effects of grazing on functions  ########
@@ -230,6 +251,7 @@ response_AIC <- rbind(total_effect, cattle_effect, wild_effect) %>%
 
 write_csv(response, "results/tables/ecosystem_effects.csv")
 write_csv(response_AIC, "results/tables/ecosystem_effects_AIC.csv")
+
 ### ---- diagnostics ------ #
 # # visualize spatial autocorrelation
 # dd <- dist(full.dat[,c("x","y")])

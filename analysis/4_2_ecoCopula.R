@@ -67,6 +67,10 @@ mara_nb <- stackedsdm(COUNT,~., data = ENV, family="negative.binomial")
 mara_gr <- cgr(mara_nb, seed=5)  #seed for demonstration
 # plot(mara_gr, pad=0.15)  # the final model you plot is the best model chosen by BIC.
 
+
+valid.m <- manyglm(COUNT ~ ., data = ENV, family="negative.binomial")
+plot(valid.m) 
+
 #########################################################################
 ############ ------- calculating graph metrics --------- ################
 #########################################################################
