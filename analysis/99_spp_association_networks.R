@@ -2,6 +2,7 @@
 
 #  ----------  read library ----------# 
 library(ggraph)
+library(tidyverse)
 library(igraph)
 library(gridExtra)
 library(circlize)
@@ -62,7 +63,7 @@ raw_cor <- raw_count %>%
   as.matrix(.) %>% # 1,455 x 35. Some months/sites missing values. Dropped. 
   cor(.) 
 hmsc_hi <- readRDS("./results/Hmsc_network_95.RDS") 
-copula_partcor <- readRDS("./results/ecoCoupla_partcor_network.RDS") 
+copula_partcor <- readRDS("./results/ecoCopula_partcor_network.RDS") 
 #hmsc_igraph_lo <- readRDS("./results/Hmsc_network_50.RDS") # posterior probability of the correlation estimate to be true is greater than 50%
 
 #all_cor <- list(raw = raw_cor, hmsc = hmsc_hi, copula = copula_partcor)
@@ -81,8 +82,8 @@ c <- ggcorrplot(copula_partcor, type = "lower", ggtheme = ggplot2::theme_minimal
                 colors = c("#b2182b", "white","#2166ac"), 
                 lab = TRUE, digits = 2, lab_size = 3, show.legend = F, tl.cex = 10)
 
-ggsave("./figures/materials/mara_corrplot.png", grid.arrange(a, b, c, nrow = 3),
-       width = 6, height = 15, device = ragg::agg_png)
+ggsave("./figures/materials/mara_corrplot_2.png", grid.arrange(a, b, c, nrow = 2),
+       width = 12, height = 10, device = ragg::agg_png)
 
 #################################
 ########## plot network #########

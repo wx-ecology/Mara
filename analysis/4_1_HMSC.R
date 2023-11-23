@@ -125,15 +125,15 @@ plot(mpost$Beta)
 
 ## alternatively, we evaluate MCMC convergence in a quantitative way in terms of effective sample size and potential scale reduction factors.
 # we want to see the effective sample sizes are very close to the theoretical value of the actual number of
-# samples, which should be samples*nChains. If true, it indicates very litte autocorrelation among consecutive samples.
+# samples, which should be samples*nChains. If true, it indicates very little autocorrelation among consecutive samples.
 # we also want to see the scale reduction factors very close to 1, which indicates the different chains gave consistent results.
 par(mfrow=c(2,2))
 # beta is the species niches 
 hist(effectiveSize(mpost$Beta), main="ess(beta)", breaks = 20)
-hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks = 20)  # <-- needs to be reported
+hist(gelman.diag(mpost$Beta, multivariate=FALSE)$psrf, main="psrf(beta)", breaks = 20) 
 # omega is the residual species associations 
 hist(effectiveSize(mpost$Omega[[1]]), main="ess(omega)", breaks = 20)  # ess omega is not the best. some of them have low effective sample saize.
-hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20) # <-- needs to be reported
+hist(gelman.diag(mpost$Omega[[1]], multivariate=FALSE)$psrf, main="psrf(omega)", breaks = 20)
 
 # ------------------------------------ explanatory power -------------------------------------------------- #
 #To assess model fit 

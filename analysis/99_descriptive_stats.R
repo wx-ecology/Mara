@@ -20,6 +20,32 @@ tableS1 <- data %>% select (Yr_Mo, Transect, Site, Cattle,
                             Buffalo, Dikdik, Eland, Elephant, Grants_Gazelle, Impala,
                               Thompsons_Gazelle, Topi, Waterbuck, Wildebeest, Zebra)
 
+occurrence <- tableS1 %>% 
+  select(-Yr_Mo, -Transect, -Site) %>% 
+  mutate_if(is.numeric, ~1 * (. != 0)) 
+cols <- colnames(occurence)
+
+# summarize total presence and percentage presence across all sampling events 
+p_occurence <- occurence %>% summarise(across(all_of(cols), ~ sum(.x, na.rm = T))) %>%
+  pivot_longer(cols = Cattle:Zebra, names_to = "species", values_to = "p_presence") %>%
+  mutate(p_presence = p_presence/1140)
+# calculate average dung count per sampling event 
+mean_count <- tableS1 %>% 
+  select(-Yr_Mo, -Transect, -Site) %>%
+  summarise(across(all_of(cols), ~ mean(.x, na.rm = T))) %>%
+  pivot_longer(cols = Cattle:Zebra, names_to = "species", values_to = "mean_count") 
+# calculate sd dung count per sampling event 
+sd_count <- tableS1 %>% 
+  select(-Yr_Mo, -Transect, -Site) %>%
+  summarise(across(all_of(cols), ~ sd(.x, na.rm = T))) %>%
+  pivot_longer(cols = Cattle:Zebra, names_to = "species", values_to = "sd_count") 
+# calculate total dung count per sampling event 
+total_count <- tableS1 %>% 
+  select(-Yr_Mo, -Transect, -Site) %>%
+  summarise(across(all_of(cols), ~ sum(.x, na.rm = T))) %>%
+  pivot_longer(cols = Cattle:Zebra, names_to = "species", values_to = "total_count") 
+
+tableS1 <- p_occurence %>% left_join(mean_count) %>% left_join(sd_count) %>% left_join(total_count)
 
 #####################################################################
 # events where cattle were present 

@@ -86,4 +86,4 @@ corrplot(mara_gr$best_graph$cov,
          col = colorRampPalette(c("#ff5e1f","#ffffff","#389bd9"))(200))
 
 cov_out <- mara_gr$best_graph$part
-saveRDS(cov_out, "./results/ecoCoupla_partcor_network.RDS")
+saveRDS(cov_out, "./results/ecoCopula_partcor_network.RDS")
